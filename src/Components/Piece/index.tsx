@@ -1,8 +1,8 @@
 import React from 'react';
+import '../ChessBoard/styles.css';
 
 interface PieceProps {
   piece: string;
-  onClick?: () => void;
 }
 
 const getSymbolId = (piece: string): string | null => {
@@ -22,7 +22,7 @@ const getSymbolId = (piece: string): string | null => {
   return null;
 };
 
-const Piece: React.FC<PieceProps> = React.memo(({ piece, onClick }) => {
+const Piece: React.FC<PieceProps> = React.memo(({ piece }) => {
   const symbolId = getSymbolId(piece);
 
   if (!symbolId) {
@@ -31,11 +31,7 @@ const Piece: React.FC<PieceProps> = React.memo(({ piece, onClick }) => {
 
   const svgUrl = `/assets/svg/pieces/${symbolId}.svg`;
 
-  return (
-    <div onClick={onClick}>
-      <img src={svgUrl} alt={`${symbolId} piece`} width="50" height="50" />
-    </div>
-  );
+  return <img src={svgUrl} alt={`${symbolId} piece`} width="50" height="50" />;
 });
 
 Piece.displayName = 'Piece';
