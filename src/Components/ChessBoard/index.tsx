@@ -1,13 +1,64 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Piece from '../Piece';
 
+import { createPiece } from '../../utils/createPiece';
+
 import './styles.css';
+
+interface Piece {
+  color: 'white' | 'black';
+  role: 'pawn' | 'rook' | 'knight' | 'bishop' | 'queen' | 'king';
+}
+
+interface Empty {
+  color: '';
+  role: '';
+}
+
+interface GameState {
+  pieces: Map<string, Piece | Empty>;
+  orientation: 'white' | 'black';
+  turnColor: 'white' | 'black';
+  coordinates: boolean;
+  ranksPosition: 'left' | 'right';
+  autoCastle: boolean;
+  viewOnly: boolean;
+  highlight: {
+    lastMove: boolean;
+    check: boolean;
+  };
+  movable: {
+    free: boolean;
+    color: 'both' | 'white' | 'black';
+    showDests: boolean;
+  };
+}
+
+const state: GameState = {
+  pieces: new Map(),
+  orientation: 'white',
+  turnColor: 'white',
+  coordinates: true,
+  ranksPosition: 'right',
+  autoCastle: true,
+  viewOnly: false,
+  highlight: {
+    lastMove: true,
+    check: true,
+  },
+  movable: {
+    free: true,
+    color: 'both',
+    showDests: true,
+  },
+};
 
 const DIGITS = '0123456789';
 const squareSize = 50;
 
 const initialFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const fen = initialFEN;
+const fenPosition = initialFEN.split(' ')[0];
+const fenTurn = initialFEN.split(' ')[1];
 
 const mapToRange = (num: number): number[] => {
   const adjustedNum = num + squareSize / 2;
@@ -102,13 +153,12 @@ const ChessBoard: React.FC = () => {
         const pieces: JSX.Element[] = [];
         let row = 0;
         let col = 0;
+        state.turnColor = fenTurn === 'w' ? 'white' : 'black';
 
-        for (let i = 0; i < fen.length; i++) {
-          const char = fen[i];
+        for (let i = 0; i < fenPosition.length; i++) {
+          const char = fenPosition[i];
 
-          if (char === ' ') {
-            break;
-          } else if (char === '/') {
+          if (char === '/') {
             row += 1;
             col = 0;
           } else if (DIGITS.includes(char)) {
@@ -116,6 +166,11 @@ const ChessBoard: React.FC = () => {
           } else {
             const x = col * squareSize;
             const y = row * squareSize;
+            const columnLetter = String.fromCharCode(97 + col);
+            const rowNumber = 8 - row;
+            const square = `${columnLetter}${rowNumber}`;
+            const piece = createPiece(char);
+            state.pieces.set(square, piece);
 
             pieces.push(
               <div
