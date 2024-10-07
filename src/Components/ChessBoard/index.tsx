@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Piece from '../Piece';
 
 import { createPiece } from '../../utils/createPiece';
+import { getPieceClass } from '../../utils/getPieceClass';
 
 import './styles.css';
 
@@ -10,13 +11,13 @@ interface Piece {
   role: 'pawn' | 'rook' | 'knight' | 'bishop' | 'queen' | 'king';
 }
 
-interface Empty {
+interface EmptyPiece {
   color: '';
   role: '';
 }
 
 interface GameState {
-  pieces: Map<string, Piece | Empty>;
+  pieces: Map<string, Piece | EmptyPiece>;
   orientation: 'white' | 'black';
   turnColor: 'white' | 'black';
   coordinates: boolean;
@@ -104,7 +105,6 @@ const ChessBoard: React.FC = () => {
       const offsetY = event.clientY - squareSize / 2;
       pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
       pieceDiv.style.zIndex = '10';
-      pieceDiv.style.zIndex = '';
     }
   };
 
@@ -139,6 +139,7 @@ const ChessBoard: React.FC = () => {
 
             pieceDiv.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
             pieceDiv.style.zIndex = '0';
+            pieceDiv.style.zIndex = '';
           }
         }
       }
@@ -148,7 +149,7 @@ const ChessBoard: React.FC = () => {
   };
 
   return (
-    <div className="cg-board">
+    <div className="ljdr-board">
       {(() => {
         const pieces: JSX.Element[] = [];
         let row = 0;
@@ -174,7 +175,7 @@ const ChessBoard: React.FC = () => {
 
             pieces.push(
               <div
-                className="cg-container-piece"
+                className={`ljdr-piece ${getPieceClass(char)}`}
                 key={`${char}-${row}-${col}`}
                 ref={(el) => (pieceRefs.current[i] = el)}
                 style={{
@@ -182,11 +183,7 @@ const ChessBoard: React.FC = () => {
                 }}
                 onMouseDown={(event) => handleMouseDown(i, event)}
                 onMouseUp={handleMouseUp}
-              >
-                <div className={`cg-piece ${char}`}>
-                  <Piece piece={char} />
-                </div>
-              </div>
+              ></div>
             );
 
             col += 1;
