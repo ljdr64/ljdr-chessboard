@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Piece from '../Piece';
 
 import { createPiece } from '../../utils/createPiece';
 import { getPieceClass } from '../../utils/getPieceClass';
@@ -58,7 +57,7 @@ const DIGITS = '0123456789';
 const squareSize = 50;
 
 const initialFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const fenPosition = initialFEN.split(' ')[0];
+let fenPosition = initialFEN.split(' ')[0];
 const fenTurn = initialFEN.split(' ')[1];
 
 const mapToRange = (num: number): number[] => {
@@ -68,10 +67,19 @@ const mapToRange = (num: number): number[] => {
   return [coords, Math.min(Math.max(result, 0), squareSize * 7)];
 };
 
+const updateFENForTake = (fen: string, index: number): string => {
+  const updatedFEN = fen.slice(0, index) + '1' + fen.slice(index + 1);
+
+  return updatedFEN.replace(/1+/g, (match: string) => {
+    return match.length.toString();
+  });
+};
+
 const ChessBoard: React.FC = () => {
   const pieceRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [isDragging, setIsDragging] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const pieceRefsCurrent = pieceRefs.current;
 
   useEffect(() => {
     if (isDragging) {
@@ -136,6 +144,21 @@ const ChessBoard: React.FC = () => {
           {
             const newX = mapToRange(parseInt(position[1], 10));
             const newY = mapToRange(parseInt(position[2], 10));
+
+            Object.keys(pieceRefsCurrent).forEach((key) => {
+              const pieceRef = pieceRefsCurrent[key];
+              if (pieceRef?.style?.transform) {
+                if (
+                  pieceRef.style.transform ===
+                  `translate(${newX[1]}px, ${newY[1]}px)`
+                ) {
+                  fenPosition = updateFENForTake(
+                    fenPosition,
+                    parseInt(key, 10)
+                  );
+                }
+              }
+            });
 
             pieceDiv.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
             pieceDiv.style.zIndex = '0';
