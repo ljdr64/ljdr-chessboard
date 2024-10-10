@@ -55,6 +55,7 @@ const state: GameState = {
 
 const DIGITS = '0123456789';
 const squareSize = 50;
+const transitionDuration = '0.2s';
 
 const initialFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 let fenPosition = initialFEN.split(' ')[0];
@@ -107,12 +108,40 @@ const ChessBoard: React.FC = () => {
   ) => {
     const pieceDiv = pieceRefs.current[index];
     if (pieceDiv) {
-      setIsDragging(true);
-      setDraggedIndex(index);
-      const offsetX = event.clientX - squareSize / 2;
-      const offsetY = event.clientY - squareSize / 2;
-      pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-      pieceDiv.style.zIndex = '10';
+      if (draggedIndex === null || draggedIndex === index) {
+        setIsDragging(true);
+        setDraggedIndex(index);
+        const offsetX = event.clientX - squareSize / 2;
+        const offsetY = event.clientY - squareSize / 2;
+        pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+        pieceDiv.classList.add('drag');
+      } else if (pieceRefs.current[draggedIndex]) {
+        const draggedPiece = pieceRefs.current[draggedIndex];
+
+        pieceDiv.classList.add('fade');
+        draggedPiece.classList.add('animate');
+        draggedPiece.style.transitionDuration = transitionDuration;
+        draggedPiece.style.transform = pieceDiv.style.transform;
+
+        if (draggedPiece) {
+          const handleTransitionEnd = () => {
+            draggedPiece.removeEventListener(
+              'transitionend',
+              handleTransitionEnd
+            );
+
+            fenPosition = updateFENForTake(fenPosition, index);
+            setTimeout(() => {
+              pieceDiv.classList.remove('fade');
+              draggedPiece.classList.remove('animate');
+              draggedPiece.style.transitionDuration = '';
+            }, 0);
+            setDraggedIndex(null);
+          };
+
+          draggedPiece.addEventListener('transitionend', handleTransitionEnd);
+        }
+      }
     }
   };
 
@@ -150,25 +179,25 @@ const ChessBoard: React.FC = () => {
               if (pieceRef?.style?.transform) {
                 if (
                   pieceRef.style.transform ===
-                  `translate(${newX[1]}px, ${newY[1]}px)`
+                    `translate(${newX[1]}px, ${newY[1]}px)` &&
+                  draggedIndex !== parseInt(key, 10)
                 ) {
                   fenPosition = updateFENForTake(
                     fenPosition,
                     parseInt(key, 10)
                   );
+                  setDraggedIndex(null);
                 }
               }
             });
 
             pieceDiv.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
-            pieceDiv.style.zIndex = '0';
-            pieceDiv.style.zIndex = '';
+            pieceDiv.classList.remove('drag');
           }
         }
       }
     }
     setIsDragging(false);
-    setDraggedIndex(null);
   };
 
   return (
