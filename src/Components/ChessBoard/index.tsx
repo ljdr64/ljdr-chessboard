@@ -80,6 +80,7 @@ const ChessBoard: React.FC = () => {
   const pieceRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [isDragging, setIsDragging] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [lastMove, setLastMove] = useState('');
   const pieceRefsCurrent = pieceRefs.current;
 
   useEffect(() => {
@@ -106,40 +107,73 @@ const ChessBoard: React.FC = () => {
     index: number,
     event: React.MouseEvent<HTMLDivElement>
   ) => {
-    const pieceDiv = pieceRefs.current[index];
-    if (pieceDiv) {
-      if (draggedIndex === null || draggedIndex === index) {
-        setIsDragging(true);
-        setDraggedIndex(index);
-        const offsetX = event.clientX - squareSize / 2;
-        const offsetY = event.clientY - squareSize / 2;
-        pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-        pieceDiv.classList.add('drag');
-      } else if (pieceRefs.current[draggedIndex]) {
-        const draggedPiece = pieceRefs.current[draggedIndex];
+    event.stopPropagation();
 
-        pieceDiv.classList.add('fade');
-        draggedPiece.classList.add('animate');
-        draggedPiece.style.transitionDuration = transitionDuration;
-        draggedPiece.style.transform = pieceDiv.style.transform;
+    if (
+      index === -1 &&
+      draggedIndex !== null &&
+      pieceRefs.current[draggedIndex]
+    ) {
+      const offsetX = event.clientX - squareSize / 2;
+      const offsetY = event.clientY - squareSize / 2;
+      const newX = mapToRange(offsetX);
+      const newY = mapToRange(offsetY);
+      const draggedPiece = pieceRefs.current[draggedIndex];
+      draggedPiece.classList.add('animate');
+      draggedPiece.style.transitionDuration = transitionDuration;
+      draggedPiece.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
 
-        if (draggedPiece) {
-          const handleTransitionEnd = () => {
-            draggedPiece.removeEventListener(
-              'transitionend',
-              handleTransitionEnd
-            );
+      if (draggedPiece) {
+        const handleTransitionEnd = () => {
+          draggedPiece.removeEventListener(
+            'transitionend',
+            handleTransitionEnd
+          );
 
-            fenPosition = updateFENForTake(fenPosition, index);
-            setTimeout(() => {
-              pieceDiv.classList.remove('fade');
-              draggedPiece.classList.remove('animate');
-              draggedPiece.style.transitionDuration = '';
-            }, 0);
-            setDraggedIndex(null);
-          };
+          setTimeout(() => {
+            draggedPiece.classList.remove('animate');
+            draggedPiece.style.transitionDuration = '';
+          }, 0);
+          setDraggedIndex(null);
+        };
+        draggedPiece.addEventListener('transitionend', handleTransitionEnd);
+      }
+    } else {
+      const pieceDiv = pieceRefs.current[index];
+      if (pieceDiv) {
+        setLastMove(pieceDiv.style.transform.toString());
+        if (draggedIndex === null || draggedIndex === index) {
+          setIsDragging(true);
+          setDraggedIndex(index);
+          const offsetX = event.clientX - squareSize / 2;
+          const offsetY = event.clientY - squareSize / 2;
+          pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+          pieceDiv.classList.add('drag');
+        } else if (pieceRefs.current[draggedIndex]) {
+          const draggedPiece = pieceRefs.current[draggedIndex];
 
-          draggedPiece.addEventListener('transitionend', handleTransitionEnd);
+          pieceDiv.classList.add('fade');
+          draggedPiece.classList.add('animate');
+          draggedPiece.style.transitionDuration = transitionDuration;
+          draggedPiece.style.transform = pieceDiv.style.transform;
+
+          if (draggedPiece) {
+            const handleTransitionEnd = () => {
+              draggedPiece.removeEventListener(
+                'transitionend',
+                handleTransitionEnd
+              );
+
+              fenPosition = updateFENForTake(fenPosition, index);
+              setTimeout(() => {
+                pieceDiv.classList.remove('fade');
+                draggedPiece.classList.remove('animate');
+                draggedPiece.style.transitionDuration = '';
+              }, 0);
+              setDraggedIndex(null);
+            };
+            draggedPiece.addEventListener('transitionend', handleTransitionEnd);
+          }
         }
       }
     }
@@ -190,6 +224,9 @@ const ChessBoard: React.FC = () => {
                 }
               }
             });
+            if (lastMove !== `translate(${newX[1]}px, ${newY[1]}px)`) {
+              setDraggedIndex(null);
+            }
 
             pieceDiv.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
             pieceDiv.classList.remove('drag');
@@ -201,7 +238,10 @@ const ChessBoard: React.FC = () => {
   };
 
   return (
-    <div className="ljdr-board">
+    <div
+      className="ljdr-board"
+      onMouseDown={(event) => handleMouseDown(-1, event)}
+    >
       {(() => {
         const pieces: JSX.Element[] = [];
         let row = 0;
