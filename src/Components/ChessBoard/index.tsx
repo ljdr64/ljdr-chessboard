@@ -54,7 +54,7 @@ const state: GameState = {
 };
 
 const DIGITS = '0123456789';
-const squareSize = 50;
+const squareSize = 60;
 const transitionDuration = '0.2s';
 
 const initialFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -208,27 +208,38 @@ const ChessBoard: React.FC = () => {
             const newX = mapToRange(parseInt(position[1], 10));
             const newY = mapToRange(parseInt(position[2], 10));
 
-            Object.keys(pieceRefsCurrent).forEach((key) => {
-              const pieceRef = pieceRefsCurrent[key];
-              if (pieceRef?.style?.transform) {
-                if (
-                  pieceRef.style.transform ===
-                    `translate(${newX[1]}px, ${newY[1]}px)` &&
-                  draggedIndex !== parseInt(key, 10)
-                ) {
-                  fenPosition = updateFENForTake(
-                    fenPosition,
-                    parseInt(key, 10)
-                  );
-                  setDraggedIndex(null);
-                }
-              }
-            });
-            if (lastMove !== `translate(${newX[1]}px, ${newY[1]}px)`) {
+            if (
+              parseInt(position[1], 10) < 0 - squareSize / 2 ||
+              parseInt(position[2], 10) < 0 - squareSize / 2 ||
+              parseInt(position[1], 10) > squareSize * 7 + squareSize / 2 ||
+              parseInt(position[2], 10) > squareSize * 7 + squareSize / 2
+            ) {
+              pieceDiv.style.transform = lastMove;
               setDraggedIndex(null);
+            } else {
+              Object.keys(pieceRefsCurrent).forEach((key) => {
+                const pieceRef = pieceRefsCurrent[key];
+                if (pieceRef?.style?.transform) {
+                  if (
+                    pieceRef.style.transform ===
+                      `translate(${newX[1]}px, ${newY[1]}px)` &&
+                    draggedIndex !== parseInt(key, 10)
+                  ) {
+                    fenPosition = updateFENForTake(
+                      fenPosition,
+                      parseInt(key, 10)
+                    );
+                    setDraggedIndex(null);
+                  }
+                }
+              });
+              if (lastMove !== `translate(${newX[1]}px, ${newY[1]}px)`) {
+                setDraggedIndex(null);
+              }
+
+              pieceDiv.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
             }
 
-            pieceDiv.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
             pieceDiv.classList.remove('drag');
           }
         }
