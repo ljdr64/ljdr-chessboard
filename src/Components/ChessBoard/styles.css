@@ -8,6 +8,10 @@
   box-sizing: border-box;
 }
 
+.ljdr-container {
+  display: flex;
+}
+
 .ljdr-board {
   width: calc(var(--square-size) * 8);
   height: calc(var(--square-size) * 8);
@@ -22,6 +26,14 @@
   position: absolute;
   background-size: cover;
   user-select: none;
+}
+
+.ljdr-ghost {
+  width: var(--square-size);
+  height: var(--square-size);
+  background-size: cover;
+  opacity: 0.5;
+  position: absolute;
 }
 
 .animate {

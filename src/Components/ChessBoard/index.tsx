@@ -78,6 +78,7 @@ const updateFENForTake = (fen: string, index: number): string => {
 
 const ChessBoard: React.FC = () => {
   const pieceRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const ghostRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [lastMove, setLastMove] = useState('');
@@ -149,6 +150,30 @@ const ChessBoard: React.FC = () => {
           const offsetY = event.clientY - squareSize / 2;
           pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
           pieceDiv.classList.add('drag');
+          const regex = /translate\((-?\d+)px, (-?\d+)px\)/;
+          const position = pieceDiv.style.transform.match(regex);
+          if (position && ghostRef.current) {
+            const newX = mapToRange(parseInt(position[1], 10));
+            const newY = mapToRange(parseInt(position[2], 10));
+
+            ghostRef.current.style.visibility = 'visible';
+            ghostRef.current.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
+            if (ghostRef.current.classList.length > 2) {
+              const firstOldClass = ghostRef.current.classList[1];
+              const secondOldClass = ghostRef.current.classList[2];
+              ghostRef.current.classList.replace(
+                firstOldClass,
+                pieceDiv.classList[1]
+              );
+              ghostRef.current.classList.replace(
+                secondOldClass,
+                pieceDiv.classList[2]
+              );
+            } else {
+              ghostRef.current.classList.add(pieceDiv.classList[1]);
+              ghostRef.current.classList.add(pieceDiv.classList[2]);
+            }
+          }
         } else if (pieceRefs.current[draggedIndex]) {
           const draggedPiece = pieceRefs.current[draggedIndex];
 
@@ -214,6 +239,9 @@ const ChessBoard: React.FC = () => {
               parseInt(position[1], 10) > squareSize * 7 + squareSize / 2 ||
               parseInt(position[2], 10) > squareSize * 7 + squareSize / 2
             ) {
+              if (ghostRef.current) {
+                ghostRef.current.style.visibility = 'hidden';
+              }
               pieceDiv.style.transform = lastMove;
               setDraggedIndex(null);
             } else {
@@ -238,6 +266,9 @@ const ChessBoard: React.FC = () => {
               }
 
               pieceDiv.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
+              if (ghostRef.current) {
+                ghostRef.current.style.visibility = 'hidden';
+              }
             }
 
             pieceDiv.classList.remove('drag');
@@ -249,52 +280,61 @@ const ChessBoard: React.FC = () => {
   };
 
   return (
-    <div
-      className="ljdr-board"
-      onMouseDown={(event) => handleMouseDown(-1, event)}
-    >
-      {(() => {
-        const pieces: JSX.Element[] = [];
-        let row = 0;
-        let col = 0;
-        state.turnColor = fenTurn === 'w' ? 'white' : 'black';
+    <div className="ljdr-container">
+      <div
+        className="ljdr-board"
+        onMouseDown={(event) => handleMouseDown(-1, event)}
+      >
+        {(() => {
+          const pieces: JSX.Element[] = [];
+          let row = 0;
+          let col = 0;
+          state.turnColor = fenTurn === 'w' ? 'white' : 'black';
 
-        for (let i = 0; i < fenPosition.length; i++) {
-          const char = fenPosition[i];
+          for (let i = 0; i < fenPosition.length; i++) {
+            const char = fenPosition[i];
 
-          if (char === '/') {
-            row += 1;
-            col = 0;
-          } else if (DIGITS.includes(char)) {
-            col += parseInt(char);
-          } else {
-            const x = col * squareSize;
-            const y = row * squareSize;
-            const columnLetter = String.fromCharCode(97 + col);
-            const rowNumber = 8 - row;
-            const square = `${columnLetter}${rowNumber}`;
-            const piece = createPiece(char);
-            state.pieces.set(square, piece);
+            if (char === '/') {
+              row += 1;
+              col = 0;
+            } else if (DIGITS.includes(char)) {
+              col += parseInt(char);
+            } else {
+              const x = col * squareSize;
+              const y = row * squareSize;
+              const columnLetter = String.fromCharCode(97 + col);
+              const rowNumber = 8 - row;
+              const square = `${columnLetter}${rowNumber}`;
+              const piece = createPiece(char);
+              state.pieces.set(square, piece);
 
-            pieces.push(
-              <div
-                className={`ljdr-piece ${getPieceClass(char)}`}
-                key={`${char}-${row}-${col}`}
-                ref={(el) => (pieceRefs.current[i] = el)}
-                style={{
-                  transform: `translate(${x}px, ${y}px)`,
-                }}
-                onMouseDown={(event) => handleMouseDown(i, event)}
-                onMouseUp={handleMouseUp}
-              ></div>
-            );
+              pieces.push(
+                <div
+                  className={`ljdr-piece ${getPieceClass(char)}`}
+                  key={`${char}-${row}-${col}`}
+                  ref={(el) => (pieceRefs.current[i] = el)}
+                  style={{
+                    transform: `translate(${x}px, ${y}px)`,
+                  }}
+                  onMouseDown={(event) => handleMouseDown(i, event)}
+                  onMouseUp={handleMouseUp}
+                ></div>
+              );
 
-            col += 1;
+              col += 1;
+            }
           }
-        }
 
-        return pieces;
-      })()}
+          return pieces;
+        })()}
+      </div>
+      <div
+        className="ljdr-ghost"
+        ref={ghostRef}
+        style={{
+          visibility: 'hidden',
+        }}
+      ></div>
     </div>
   );
 };
