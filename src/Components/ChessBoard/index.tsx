@@ -79,6 +79,9 @@ const updateFENForTake = (fen: string, index: number): string => {
 const ChessBoard: React.FC = () => {
   const pieceRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const ghostRef = useRef<HTMLDivElement>(null);
+  const lastMoveFromRef = useRef<HTMLDivElement>(null);
+  const lastMoveToRef = useRef<HTMLDivElement>(null);
+  const [showlastMove, setShowlastMove] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [lastMove, setLastMove] = useState('');
@@ -115,6 +118,7 @@ const ChessBoard: React.FC = () => {
       draggedIndex !== null &&
       pieceRefs.current[draggedIndex]
     ) {
+      // select - from: piece - to: empty
       const offsetX = event.clientX - squareSize / 2;
       const offsetY = event.clientY - squareSize / 2;
       const newX = mapToRange(offsetX);
@@ -123,6 +127,14 @@ const ChessBoard: React.FC = () => {
       draggedPiece.classList.add('animate');
       draggedPiece.style.transitionDuration = transitionDuration;
       draggedPiece.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
+      setShowlastMove(true);
+      setTimeout(() => {
+        if (lastMoveFromRef.current && lastMoveToRef.current) {
+          lastMoveFromRef.current.style.transform =
+            draggedPiece.style.transform;
+          lastMoveToRef.current.style.transform = lastMove;
+        }
+      }, 0);
 
       if (draggedPiece) {
         const handleTransitionEnd = () => {
@@ -175,12 +187,21 @@ const ChessBoard: React.FC = () => {
             }
           }
         } else if (pieceRefs.current[draggedIndex]) {
+          // select - from: piece - to: piece
           const draggedPiece = pieceRefs.current[draggedIndex];
 
           pieceDiv.classList.add('fade');
           draggedPiece.classList.add('animate');
           draggedPiece.style.transitionDuration = transitionDuration;
           draggedPiece.style.transform = pieceDiv.style.transform;
+          setShowlastMove(true);
+          setTimeout(() => {
+            if (lastMoveFromRef.current && lastMoveToRef.current) {
+              lastMoveFromRef.current.style.transform =
+                draggedPiece.style.transform;
+              lastMoveToRef.current.style.transform = lastMove;
+            }
+          }, 0);
 
           if (draggedPiece) {
             const handleTransitionEnd = () => {
@@ -253,6 +274,7 @@ const ChessBoard: React.FC = () => {
                       `translate(${newX[1]}px, ${newY[1]}px)` &&
                     draggedIndex !== parseInt(key, 10)
                   ) {
+                    // drag - from: piece - to: piece
                     fenPosition = updateFENForTake(
                       fenPosition,
                       parseInt(key, 10)
@@ -265,7 +287,19 @@ const ChessBoard: React.FC = () => {
                 setDraggedIndex(null);
               }
 
+              // drag - from: piece - to: empty
               pieceDiv.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
+              if (lastMove !== pieceDiv.style.transform) {
+                setShowlastMove(true);
+                setTimeout(() => {
+                  if (lastMoveFromRef.current && lastMoveToRef.current) {
+                    lastMoveFromRef.current.style.transform =
+                      pieceDiv.style.transform;
+                    lastMoveToRef.current.style.transform = lastMove;
+                  }
+                }, 0);
+              }
+
               if (ghostRef.current) {
                 ghostRef.current.style.visibility = 'hidden';
               }
@@ -285,6 +319,12 @@ const ChessBoard: React.FC = () => {
         className="ljdr-board"
         onMouseDown={(event) => handleMouseDown(-1, event)}
       >
+        {showlastMove && (
+          <>
+            <div className="ljdr-last-move" ref={lastMoveFromRef}></div>
+            <div className="ljdr-last-move" ref={lastMoveToRef}></div>
+          </>
+        )}
         {(() => {
           const pieces: JSX.Element[] = [];
           let row = 0;

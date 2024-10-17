@@ -36,6 +36,14 @@
   position: absolute;
 }
 
+.ljdr-last-move {
+  width: var(--square-size);
+  height: var(--square-size);
+  background: rgba(155, 199, 0, 0.41);
+  background-size: cover;
+  position: absolute;
+}
+
 .animate {
   transition-property: transform;
   transition-timing-function: ease-in-out;
