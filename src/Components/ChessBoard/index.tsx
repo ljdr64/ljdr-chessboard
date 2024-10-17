@@ -79,12 +79,16 @@ const updateFENForTake = (fen: string, index: number): string => {
 const ChessBoard: React.FC = () => {
   const pieceRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const ghostRef = useRef<HTMLDivElement>(null);
+  const selectRef = useRef<HTMLDivElement>(null);
   const lastMoveFromRef = useRef<HTMLDivElement>(null);
   const lastMoveToRef = useRef<HTMLDivElement>(null);
-  const [showlastMove, setShowlastMove] = useState(false);
+
+  const [showLastMove, setShowLastMove] = useState(false);
+  const [positionSelect, setPositionSelect] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [lastMove, setLastMove] = useState('');
+
   const pieceRefsCurrent = pieceRefs.current;
 
   useEffect(() => {
@@ -127,12 +131,13 @@ const ChessBoard: React.FC = () => {
       draggedPiece.classList.add('animate');
       draggedPiece.style.transitionDuration = transitionDuration;
       draggedPiece.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
-      setShowlastMove(true);
+      setShowLastMove(true);
+      setPositionSelect('');
       setTimeout(() => {
         if (lastMoveFromRef.current && lastMoveToRef.current) {
-          lastMoveFromRef.current.style.transform =
-            draggedPiece.style.transform;
-          lastMoveToRef.current.style.transform = lastMove;
+          lastMoveFromRef.current.style.transform = lastMove;
+          lastMoveToRef.current.style.transform = draggedPiece.style.transform;
+          lastMoveToRef.current.classList.remove('select');
         }
       }, 0);
 
@@ -158,6 +163,7 @@ const ChessBoard: React.FC = () => {
         if (draggedIndex === null || draggedIndex === index) {
           setIsDragging(true);
           setDraggedIndex(index);
+
           const offsetX = event.clientX - squareSize / 2;
           const offsetY = event.clientY - squareSize / 2;
           pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
@@ -167,6 +173,15 @@ const ChessBoard: React.FC = () => {
           if (position && ghostRef.current) {
             const newX = mapToRange(parseInt(position[1], 10));
             const newY = mapToRange(parseInt(position[2], 10));
+
+            if (
+              lastMoveToRef.current?.style.transform ===
+              `translate(${newX[1]}px, ${newY[1]}px)`
+            ) {
+              lastMoveToRef.current.classList.add('select');
+            } else {
+              setPositionSelect(`translate(${newX[1]}px, ${newY[1]}px)`);
+            }
 
             ghostRef.current.style.visibility = 'visible';
             ghostRef.current.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
@@ -194,12 +209,14 @@ const ChessBoard: React.FC = () => {
           draggedPiece.classList.add('animate');
           draggedPiece.style.transitionDuration = transitionDuration;
           draggedPiece.style.transform = pieceDiv.style.transform;
-          setShowlastMove(true);
+          setShowLastMove(true);
+          setPositionSelect('');
           setTimeout(() => {
             if (lastMoveFromRef.current && lastMoveToRef.current) {
-              lastMoveFromRef.current.style.transform =
+              lastMoveFromRef.current.style.transform = lastMove;
+              lastMoveToRef.current.style.transform =
                 draggedPiece.style.transform;
-              lastMoveToRef.current.style.transform = lastMove;
+              lastMoveToRef.current.classList.remove('select');
             }
           }, 0);
 
@@ -290,12 +307,14 @@ const ChessBoard: React.FC = () => {
               // drag - from: piece - to: empty
               pieceDiv.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
               if (lastMove !== pieceDiv.style.transform) {
-                setShowlastMove(true);
+                setShowLastMove(true);
+                setPositionSelect('');
                 setTimeout(() => {
                   if (lastMoveFromRef.current && lastMoveToRef.current) {
-                    lastMoveFromRef.current.style.transform =
+                    lastMoveFromRef.current.style.transform = lastMove;
+                    lastMoveToRef.current.style.transform =
                       pieceDiv.style.transform;
-                    lastMoveToRef.current.style.transform = lastMove;
+                    lastMoveToRef.current.classList.remove('select');
                   }
                 }, 0);
               }
@@ -319,10 +338,19 @@ const ChessBoard: React.FC = () => {
         className="ljdr-board"
         onMouseDown={(event) => handleMouseDown(-1, event)}
       >
-        {showlastMove && (
+        {positionSelect && (
+          <div
+            className="select"
+            ref={selectRef}
+            style={{
+              transform: positionSelect,
+            }}
+          ></div>
+        )}
+        {showLastMove && (
           <>
-            <div className="ljdr-last-move" ref={lastMoveFromRef}></div>
             <div className="ljdr-last-move" ref={lastMoveToRef}></div>
+            <div className="ljdr-last-move" ref={lastMoveFromRef}></div>
           </>
         )}
         {(() => {

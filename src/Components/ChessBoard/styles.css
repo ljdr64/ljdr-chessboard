@@ -44,6 +44,14 @@
   position: absolute;
 }
 
+.select {
+  width: var(--square-size);
+  height: var(--square-size);
+  background: rgba(20, 85, 30, 0.5);
+  background-size: cover;
+  position: absolute;
+}
+
 .animate {
   transition-property: transform;
   transition-timing-function: ease-in-out;
