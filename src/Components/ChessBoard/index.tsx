@@ -89,6 +89,7 @@ const ChessBoard: React.FC = () => {
   });
   const [positionSelect, setPositionSelect] = useState('');
 
+  const [isSelect, setIsSelect] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [lastMove, setLastMove] = useState('');
@@ -124,7 +125,8 @@ const ChessBoard: React.FC = () => {
     if (
       index === -1 &&
       draggedIndex !== null &&
-      pieceRefs.current[draggedIndex]
+      pieceRefs.current[draggedIndex] &&
+      isSelect
     ) {
       // select - from: piece - to: empty
       const offsetX = event.clientX - squareSize / 2;
@@ -137,6 +139,7 @@ const ChessBoard: React.FC = () => {
       draggedPiece.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
 
       setPositionSelect('');
+      setIsSelect((prev) => !prev);
       setPositionLastMove({ from: lastMove, to: draggedPiece.style.transform });
       if (lastMoveToRef.current) {
         lastMoveToRef.current.classList.remove('select');
@@ -158,10 +161,15 @@ const ChessBoard: React.FC = () => {
         draggedPiece.addEventListener('transitionend', handleTransitionEnd);
       }
     } else {
+      // select - from = to (piece selected)
       const pieceDiv = pieceRefs.current[index];
       if (pieceDiv) {
         setLastMove(pieceDiv.style.transform.toString());
-        if (draggedIndex === null || draggedIndex === index) {
+        if (
+          draggedIndex === null ||
+          draggedIndex === index ||
+          (draggedIndex !== index && !isSelect)
+        ) {
           setIsDragging(true);
           setDraggedIndex(index);
 
@@ -175,6 +183,7 @@ const ChessBoard: React.FC = () => {
             const newX = mapToRange(parseInt(position[1], 10));
             const newY = mapToRange(parseInt(position[2], 10));
 
+            setIsSelect((prev) => !prev);
             if (
               lastMoveToRef.current &&
               positionLastMove.to === `translate(${newX[1]}px, ${newY[1]}px)`
@@ -204,38 +213,46 @@ const ChessBoard: React.FC = () => {
           }
         } else if (pieceRefs.current[draggedIndex]) {
           // select - from: piece - to: piece
-          const draggedPiece = pieceRefs.current[draggedIndex];
+          if (isSelect) {
+            const draggedPiece = pieceRefs.current[draggedIndex];
 
-          pieceDiv.classList.add('fade');
-          draggedPiece.classList.add('animate');
-          draggedPiece.style.transitionDuration = transitionDuration;
-          draggedPiece.style.transform = pieceDiv.style.transform;
+            pieceDiv.classList.add('fade');
+            draggedPiece.classList.add('animate');
+            draggedPiece.style.transitionDuration = transitionDuration;
+            draggedPiece.style.transform = pieceDiv.style.transform;
 
-          setPositionSelect('');
-          setPositionLastMove({
-            from: lastMove,
-            to: draggedPiece.style.transform,
-          });
-          if (lastMoveToRef.current) {
-            lastMoveToRef.current.classList.remove('select');
-          }
+            setPositionSelect('');
+            setIsSelect((prev) => !prev);
+            setPositionLastMove({
+              from: lastMove,
+              to: draggedPiece.style.transform,
+            });
+            if (lastMoveToRef.current) {
+              lastMoveToRef.current.classList.remove('select');
+            }
 
-          if (draggedPiece) {
-            const handleTransitionEnd = () => {
-              draggedPiece.removeEventListener(
+            if (draggedPiece) {
+              const handleTransitionEnd = () => {
+                draggedPiece.removeEventListener(
+                  'transitionend',
+                  handleTransitionEnd
+                );
+
+                fenPosition = updateFENForTake(fenPosition, index);
+                setTimeout(() => {
+                  pieceDiv.classList.remove('fade');
+                  draggedPiece.classList.remove('animate');
+                  draggedPiece.style.transitionDuration = '';
+                }, 0);
+                setDraggedIndex(null);
+              };
+              draggedPiece.addEventListener(
                 'transitionend',
                 handleTransitionEnd
               );
-
-              fenPosition = updateFENForTake(fenPosition, index);
-              setTimeout(() => {
-                pieceDiv.classList.remove('fade');
-                draggedPiece.classList.remove('animate');
-                draggedPiece.style.transitionDuration = '';
-              }, 0);
-              setDraggedIndex(null);
-            };
-            draggedPiece.addEventListener('transitionend', handleTransitionEnd);
+            }
+          } else {
+            setDraggedIndex(null);
           }
         }
       }
@@ -283,6 +300,10 @@ const ChessBoard: React.FC = () => {
               pieceDiv.style.transform = lastMove;
               setDraggedIndex(null);
               setPositionSelect('');
+              setIsSelect(false);
+              if (lastMoveToRef.current) {
+                lastMoveToRef.current.classList.remove('select');
+              }
             } else {
               Object.keys(pieceRefsCurrent).forEach((key) => {
                 const pieceRef = pieceRefsCurrent[key];
@@ -309,6 +330,7 @@ const ChessBoard: React.FC = () => {
               pieceDiv.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
               if (lastMove !== pieceDiv.style.transform) {
                 setPositionSelect('');
+                setIsSelect(false);
                 setPositionLastMove({
                   from: lastMove,
                   to: pieceDiv.style.transform,
@@ -316,6 +338,13 @@ const ChessBoard: React.FC = () => {
                 if (lastMoveToRef.current) {
                   lastMoveToRef.current.classList.remove('select');
                 }
+              }
+
+              if (!isSelect) {
+                if (lastMoveToRef.current) {
+                  lastMoveToRef.current.classList.remove('select');
+                }
+                setPositionSelect('');
               }
 
               if (ghostRef.current) {
