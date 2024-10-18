@@ -15,6 +15,12 @@ interface EmptyPiece {
   role: '';
 }
 
+interface ChessGameProps {
+  initialFEN: string;
+  squareSize: number;
+  transitionDuration: string;
+}
+
 interface GameState {
   pieces: Map<string, Piece | EmptyPiece>;
   orientation: 'white' | 'black';
@@ -53,15 +59,7 @@ const state: GameState = {
   },
 };
 
-const DIGITS = '0123456789';
-const squareSize = 60;
-const transitionDuration = '0.2s';
-
-const initialFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-let fenPosition = initialFEN.split(' ')[0];
-const fenTurn = initialFEN.split(' ')[1];
-
-const mapToRange = (num: number): number[] => {
+const mapToRange = (num: number, squareSize: number): number[] => {
   const adjustedNum = num + squareSize / 2;
   const coords = Math.floor(adjustedNum / squareSize);
   const result = coords * squareSize;
@@ -76,25 +74,32 @@ const updateFENForTake = (fen: string, index: number): string => {
   });
 };
 
-const ChessBoard: React.FC = () => {
+const ChessBoard: React.FC<ChessGameProps> = ({
+  initialFEN,
+  squareSize,
+  transitionDuration,
+}) => {
   const pieceRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const ghostRef = useRef<HTMLDivElement>(null);
   const selectRef = useRef<HTMLDivElement>(null);
   const lastMoveToRef = useRef<HTMLDivElement>(null);
   const lastMoveFromRef = useRef<HTMLDivElement>(null);
 
+  const [fenPosition, setFenPosition] = useState(initialFEN.split(' ')[0]);
   const [positionLastMove, setPositionLastMove] = useState({
     from: '',
     to: '',
   });
   const [positionSelect, setPositionSelect] = useState('');
-
   const [isSelect, setIsSelect] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [lastMove, setLastMove] = useState('');
 
   const pieceRefsCurrent = pieceRefs.current;
+
+  const fenTurn = initialFEN.split(' ')[1];
+  const DIGITS = '0123456789';
 
   useEffect(() => {
     if (isDragging) {
@@ -138,8 +143,8 @@ const ChessBoard: React.FC = () => {
       const offsetX = event.clientX - piecePos.posX + window.scrollX;
       const offsetY = event.clientY - piecePos.posY + window.scrollY;
 
-      const newX = mapToRange(offsetX);
-      const newY = mapToRange(offsetY);
+      const newX = mapToRange(offsetX, squareSize);
+      const newY = mapToRange(offsetY, squareSize);
       const draggedPiece = pieceRefs.current[draggedIndex];
       draggedPiece.classList.add('animate');
       draggedPiece.style.transitionDuration = transitionDuration;
@@ -192,8 +197,8 @@ const ChessBoard: React.FC = () => {
           const regex = /translate\((-?\d+)px, (-?\d+)px\)/;
           const position = pieceDiv.style.transform.match(regex);
           if (position && ghostRef.current) {
-            const newX = mapToRange(parseInt(position[1], 10));
-            const newY = mapToRange(parseInt(position[2], 10));
+            const newX = mapToRange(parseInt(position[1], 10), squareSize);
+            const newY = mapToRange(parseInt(position[2], 10), squareSize);
 
             setIsSelect((prev) => !prev);
             if (
@@ -250,7 +255,7 @@ const ChessBoard: React.FC = () => {
                   handleTransitionEnd
                 );
 
-                fenPosition = updateFENForTake(fenPosition, index);
+                setFenPosition(updateFENForTake(fenPosition, index));
                 setTimeout(() => {
                   pieceDiv.classList.remove('fade');
                   draggedPiece.classList.remove('animate');
@@ -297,8 +302,9 @@ const ChessBoard: React.FC = () => {
         const position = pieceDiv.style.transform.match(regex);
         if (position) {
           {
-            const newX = mapToRange(parseInt(position[1], 10));
-            const newY = mapToRange(parseInt(position[2], 10));
+            const newX = mapToRange(parseInt(position[1], 10), squareSize);
+            const newY = mapToRange(parseInt(position[2], 10), squareSize);
+            console.log(parseInt(position[1], 10), parseInt(position[2], 10));
 
             if (
               parseInt(position[1], 10) < 0 - squareSize / 2 ||
@@ -328,9 +334,8 @@ const ChessBoard: React.FC = () => {
                     draggedIndex !== parseInt(key, 10)
                   ) {
                     // drag - from: piece - to: piece
-                    fenPosition = updateFENForTake(
-                      fenPosition,
-                      parseInt(key, 10)
+                    setFenPosition(
+                      updateFENForTake(fenPosition, parseInt(key, 10))
                     );
                     setDraggedIndex(null);
                   }
@@ -375,9 +380,19 @@ const ChessBoard: React.FC = () => {
   };
 
   return (
-    <div className="ljdr-container">
+    <div
+      className="ljdr-container"
+      style={{
+        width: `${squareSize * 8}px`,
+        height: `${squareSize * 8}px`,
+      }}
+    >
       <div
         className="ljdr-board"
+        style={{
+          width: `${squareSize * 8}px`,
+          height: `${squareSize * 8}px`,
+        }}
         onMouseDown={(event) => handleMouseDown(-1, event)}
       >
         {positionSelect && (
@@ -385,6 +400,8 @@ const ChessBoard: React.FC = () => {
             className="select"
             ref={selectRef}
             style={{
+              width: `${squareSize}px`,
+              height: `${squareSize}px`,
               transform: positionSelect,
             }}
           ></div>
@@ -395,6 +412,8 @@ const ChessBoard: React.FC = () => {
               className="ljdr-last-move"
               ref={lastMoveToRef}
               style={{
+                width: `${squareSize}px`,
+                height: `${squareSize}px`,
                 transform: positionLastMove.to,
               }}
             ></div>
@@ -402,6 +421,8 @@ const ChessBoard: React.FC = () => {
               className="ljdr-last-move"
               ref={lastMoveFromRef}
               style={{
+                width: `${squareSize}px`,
+                height: `${squareSize}px`,
                 transform: positionLastMove.from,
               }}
             ></div>
@@ -436,6 +457,8 @@ const ChessBoard: React.FC = () => {
                   key={`${char}-${row}-${col}`}
                   ref={(el) => (pieceRefs.current[i] = el)}
                   style={{
+                    width: `${squareSize}px`,
+                    height: `${squareSize}px`,
                     transform: `translate(${x}px, ${y}px)`,
                   }}
                   onMouseDown={(event) => handleMouseDown(i, event)}
@@ -454,6 +477,8 @@ const ChessBoard: React.FC = () => {
         className="ljdr-ghost"
         ref={ghostRef}
         style={{
+          width: `${squareSize}px`,
+          height: `${squareSize}px`,
           visibility: 'hidden',
         }}
       ></div>
