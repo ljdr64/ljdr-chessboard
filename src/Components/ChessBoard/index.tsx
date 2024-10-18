@@ -129,8 +129,15 @@ const ChessBoard: React.FC = () => {
       isSelect
     ) {
       // select - from: piece - to: empty
-      const offsetX = event.clientX - squareSize / 2;
-      const offsetY = event.clientY - squareSize / 2;
+      const pieceDiv = pieceRefs.current[draggedIndex];
+      const piecePos = {
+        posX: pieceDiv.offsetLeft + squareSize / 2,
+        posY: pieceDiv.offsetTop + squareSize / 2,
+      };
+
+      const offsetX = event.clientX - piecePos.posX + window.scrollX;
+      const offsetY = event.clientY - piecePos.posY + window.scrollY;
+
       const newX = mapToRange(offsetX);
       const newY = mapToRange(offsetY);
       const draggedPiece = pieceRefs.current[draggedIndex];
@@ -172,10 +179,15 @@ const ChessBoard: React.FC = () => {
         ) {
           setIsDragging(true);
           setDraggedIndex(index);
+          const piecePos = {
+            posX: pieceDiv.offsetLeft + squareSize / 2,
+            posY: pieceDiv.offsetTop + squareSize / 2,
+          };
 
-          const offsetX = event.clientX - squareSize / 2;
-          const offsetY = event.clientY - squareSize / 2;
-          pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+          const newX = event.clientX - piecePos.posX + window.scrollX;
+          const newY = event.clientY - piecePos.posY + window.scrollY;
+          pieceDiv.style.transform = `translate(${newX}px, ${newY}px)`;
+
           pieceDiv.classList.add('drag');
           const regex = /translate\((-?\d+)px, (-?\d+)px\)/;
           const position = pieceDiv.style.transform.match(regex);
@@ -291,8 +303,10 @@ const ChessBoard: React.FC = () => {
             if (
               parseInt(position[1], 10) < 0 - squareSize / 2 ||
               parseInt(position[2], 10) < 0 - squareSize / 2 ||
-              parseInt(position[1], 10) > squareSize * 7 + squareSize / 2 ||
-              parseInt(position[2], 10) > squareSize * 7 + squareSize / 2
+              parseInt(position[1], 10) >
+                squareSize * 7 + window.scrollX + squareSize / 2 ||
+              parseInt(position[2], 10) >
+                squareSize * 7 + window.scrollY + squareSize / 2
             ) {
               if (ghostRef.current) {
                 ghostRef.current.style.visibility = 'hidden';

@@ -1,5 +1,7 @@
 :root {
   --square-size: 60px;
+  width: calc(var(--square-size) * 8);
+  height: calc(var(--square-size) * 8);
 }
 
 * {
@@ -9,6 +11,8 @@
 }
 
 .ljdr-container {
+  width: calc(var(--square-size) * 8);
+  height: calc(var(--square-size) * 8);
   display: flex;
 }
 
