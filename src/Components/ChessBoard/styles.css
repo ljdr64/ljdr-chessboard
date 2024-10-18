@@ -18,6 +18,7 @@
   position: absolute;
   background-size: cover;
   user-select: none;
+  z-index: 5;
 }
 
 .ljdr-ghost {
@@ -36,6 +37,40 @@
   background: rgba(20, 85, 30, 0.5);
   background-size: cover;
   position: absolute;
+}
+
+.coords {
+  position: absolute;
+  display: flex;
+  justify-content: space-around;
+  pointer-events: none;
+  font-family: sans-serif;
+  align-items: center;
+}
+
+.coords.ranks {
+  flex-flow: column-reverse;
+}
+
+.coords.files {
+  flex-flow: row;
+  text-align: center;
+}
+
+.coords.ranks .coord:nth-child(odd) {
+  color: #ffffdd;
+}
+
+.coords.ranks .coord:nth-child(even) {
+  color: #86a666;
+}
+
+.coords.files .coord:nth-child(odd) {
+  color: #ffffdd;
+}
+
+.coords.files .coord:nth-child(even) {
+  color: #86a666;
 }
 
 .animate {

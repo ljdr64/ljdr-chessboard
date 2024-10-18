@@ -101,6 +101,9 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const fenTurn = initialFEN.split(' ')[1];
   const DIGITS = '0123456789';
 
+  const ranksRef = useRef(null);
+  const filesRef = useRef(null);
+
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove as EventListener, {
@@ -472,6 +475,45 @@ const ChessBoard: React.FC<ChessGameProps> = ({
 
           return pieces;
         })()}
+      </div>
+      <div
+        className="coords ranks"
+        ref={ranksRef}
+        style={{
+          fontSize: `${squareSize * 0.2}px`,
+          marginTop: `${-squareSize * 0.35}px`,
+          width: `${squareSize * 0.15}px`,
+          height: `${squareSize * 8}px`,
+        }}
+      >
+        <div className="coord">1</div>
+        <div className="coord">2</div>
+        <div className="coord">3</div>
+        <div className="coord">4</div>
+        <div className="coord">5</div>
+        <div className="coord">6</div>
+        <div className="coord">7</div>
+        <div className="coord">8</div>
+      </div>
+      <div
+        className="coords files"
+        ref={filesRef}
+        style={{
+          fontSize: `${squareSize * 0.2}px`,
+          marginTop: `${squareSize * 7.75}px`,
+          marginLeft: `${squareSize * 0.38}px`,
+          width: `${squareSize * 8}px`,
+          height: `${squareSize * 0.25}px`,
+        }}
+      >
+        <div className="coord">a</div>
+        <div className="coord">b</div>
+        <div className="coord">c</div>
+        <div className="coord">d</div>
+        <div className="coord">e</div>
+        <div className="coord">f</div>
+        <div className="coord">g</div>
+        <div className="coord">h</div>
       </div>
       <div
         className="ljdr-ghost"
