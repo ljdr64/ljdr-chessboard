@@ -23,24 +23,28 @@
 
 .ljdr-ghost {
   background-size: cover;
+  user-select: none;
   opacity: 0.5;
   position: absolute;
 }
 
 .ljdr-last-move {
   background: rgba(155, 199, 0, 0.41);
+  user-select: none;
   background-size: cover;
   position: absolute;
 }
 
 .select {
   background: rgba(20, 85, 30, 0.5);
+  user-select: none;
   background-size: cover;
   position: absolute;
 }
 
 .coords {
   position: absolute;
+  user-select: none;
   display: flex;
   justify-content: space-around;
   pointer-events: none;
@@ -74,12 +78,14 @@
 }
 
 .animate {
+  pointer-events: none;
   transition-property: transform;
   transition-timing-function: ease-in-out;
   z-index: 10;
 }
 
 .fade {
+  pointer-events: none;
   opacity: 0.5;
 }
 
