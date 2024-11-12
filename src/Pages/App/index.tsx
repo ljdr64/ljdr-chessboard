@@ -1,31 +1,31 @@
 import React from 'react';
 import ChessBoard from '../../Components/ChessBoard';
 
+import './styles.css';
+
 const App: React.FC = () => {
   const initialFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
   const squareSize = 60;
   const transitionDuration = '0.2s';
   return (
-    <>
-      <div
-        style={{ width: 'fit-content', height: 'fit-content', padding: '20px' }}
-      >
+    <div className="board-main">
+      <div className="board-container">
         <ChessBoard
+          id={'board-1'}
           initialFEN={initialFEN}
           squareSize={squareSize}
           transitionDuration={transitionDuration}
         />
       </div>
-      <div
-        style={{ width: 'fit-content', height: 'fit-content', padding: '20px' }}
-      >
+      <div className="board-container">
         <ChessBoard
+          id={'board-2'}
           initialFEN={initialFEN}
           squareSize={squareSize}
           transitionDuration={transitionDuration}
         />
       </div>
-    </>
+    </div>
   );
 };
 

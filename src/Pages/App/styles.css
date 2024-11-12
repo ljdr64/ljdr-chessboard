@@ -1,0 +1,17 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.board-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.board-container {
+  width: 500px;
+  height: 500px;
+  padding: 10px;
+}

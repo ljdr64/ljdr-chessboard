@@ -16,6 +16,7 @@ interface EmptyPiece {
 }
 
 interface ChessGameProps {
+  id: string;
   initialFEN: string;
   squareSize: number;
   transitionDuration: string;
@@ -75,6 +76,7 @@ const updateFENForTake = (fen: string, index: number): string => {
 };
 
 const ChessBoard: React.FC<ChessGameProps> = ({
+  id,
   initialFEN,
   squareSize,
   transitionDuration,
@@ -100,6 +102,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
 
   const fenTurn = initialFEN.split(' ')[1];
   const DIGITS = '0123456789';
+  const regex = /translate\((-?\d+)px, (-?\d+)px\)/;
 
   const ranksRef = useRef(null);
   const filesRef = useRef(null);
@@ -138,42 +141,50 @@ const ChessBoard: React.FC<ChessGameProps> = ({
     ) {
       // select - from: piece - to: empty
       const pieceDiv = pieceRefs.current[draggedIndex];
-      const piecePos = {
-        posX: pieceDiv.offsetLeft + squareSize / 2,
-        posY: pieceDiv.offsetTop + squareSize / 2,
-      };
 
-      const offsetX = event.clientX - piecePos.posX + window.scrollX;
-      const offsetY = event.clientY - piecePos.posY + window.scrollY;
+      const position = pieceDiv.style.transform.match(regex);
+      const rect = pieceDiv.getBoundingClientRect();
 
-      const newX = mapToRange(offsetX, squareSize);
-      const newY = mapToRange(offsetY, squareSize);
-      const draggedPiece = pieceRefs.current[draggedIndex];
-      draggedPiece.classList.add('animate');
-      draggedPiece.style.transitionDuration = transitionDuration;
-      draggedPiece.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
+      if (position) {
+        const offsetX =
+          parseInt(position[1], 10) +
+          event.clientX -
+          rect.left -
+          squareSize / 2;
+        const offsetY =
+          parseInt(position[2], 10) + event.clientY - rect.top - squareSize / 2;
+        const newX = mapToRange(offsetX, squareSize);
+        const newY = mapToRange(offsetY, squareSize);
+        const draggedPiece = pieceRefs.current[draggedIndex];
+        draggedPiece.classList.add('animate');
+        draggedPiece.style.transitionDuration = transitionDuration;
+        draggedPiece.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
 
-      setPositionSelect('');
-      setIsSelect((prev) => !prev);
-      setPositionLastMove({ from: lastMove, to: draggedPiece.style.transform });
-      if (lastMoveToRef.current) {
-        lastMoveToRef.current.classList.remove('select');
-      }
+        setPositionSelect('');
+        setIsSelect((prev) => !prev);
+        setPositionLastMove({
+          from: lastMove,
+          to: draggedPiece.style.transform,
+        });
+        if (lastMoveToRef.current) {
+          lastMoveToRef.current.classList.remove('select');
+        }
 
-      if (draggedPiece) {
-        const handleTransitionEnd = () => {
-          draggedPiece.removeEventListener(
-            'transitionend',
-            handleTransitionEnd
-          );
+        if (draggedPiece) {
+          const handleTransitionEnd = () => {
+            draggedPiece.removeEventListener(
+              'transitionend',
+              handleTransitionEnd
+            );
 
-          setTimeout(() => {
-            draggedPiece.classList.remove('animate');
-            draggedPiece.style.transitionDuration = '';
-          }, 0);
-          setDraggedIndex(null);
-        };
-        draggedPiece.addEventListener('transitionend', handleTransitionEnd);
+            setTimeout(() => {
+              draggedPiece.classList.remove('animate');
+              draggedPiece.style.transitionDuration = '';
+            }, 0);
+            setDraggedIndex(null);
+          };
+          draggedPiece.addEventListener('transitionend', handleTransitionEnd);
+        }
       }
     } else {
       // select - from = to (piece selected)
@@ -187,18 +198,26 @@ const ChessBoard: React.FC<ChessGameProps> = ({
         ) {
           setIsDragging(true);
           setDraggedIndex(index);
-          const piecePos = {
-            posX: pieceDiv.offsetLeft + squareSize / 2,
-            posY: pieceDiv.offsetTop + squareSize / 2,
-          };
 
-          const newX = event.clientX - piecePos.posX + window.scrollX;
-          const newY = event.clientY - piecePos.posY + window.scrollY;
-          pieceDiv.style.transform = `translate(${newX}px, ${newY}px)`;
-
-          pieceDiv.classList.add('drag');
           const regex = /translate\((-?\d+)px, (-?\d+)px\)/;
           const position = pieceDiv.style.transform.match(regex);
+          const rect = pieceDiv.getBoundingClientRect();
+
+          if (position) {
+            const offsetX =
+              parseInt(position[1], 10) +
+              event.clientX -
+              rect.left -
+              squareSize / 2;
+            const offsetY =
+              parseInt(position[2], 10) +
+              event.clientY -
+              rect.top -
+              squareSize / 2;
+            pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+          }
+
+          pieceDiv.classList.add('drag');
           if (position && ghostRef.current) {
             const newX = mapToRange(parseInt(position[1], 10), squareSize);
             const newY = mapToRange(parseInt(position[2], 10), squareSize);
@@ -283,14 +302,23 @@ const ChessBoard: React.FC<ChessGameProps> = ({
     if (draggedIndex !== null) {
       const pieceDiv = pieceRefs.current[draggedIndex];
       if (pieceDiv) {
-        const piecePos = {
-          posX: pieceDiv.offsetLeft + squareSize / 2,
-          posY: pieceDiv.offsetTop + squareSize / 2,
-        };
-        if (isDragging) {
-          const newX = event.clientX - piecePos.posX + window.scrollX;
-          const newY = event.clientY - piecePos.posY + window.scrollY;
-          pieceDiv.style.transform = `translate(${newX}px, ${newY}px)`;
+        const position = pieceDiv.style.transform.match(regex);
+        const rect = pieceDiv.getBoundingClientRect();
+
+        if (position) {
+          if (isDragging) {
+            const offsetX =
+              parseInt(position[1], 10) +
+              event.clientX -
+              rect.left -
+              squareSize / 2;
+            const offsetY =
+              parseInt(position[2], 10) +
+              event.clientY -
+              rect.top -
+              squareSize / 2;
+            pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+          }
         }
       }
     }
@@ -300,14 +328,12 @@ const ChessBoard: React.FC<ChessGameProps> = ({
     if (!isDragging) return;
     if (draggedIndex !== null) {
       const pieceDiv = pieceRefs.current[draggedIndex];
-      const regex = /translate\((-?\d+)px, (-?\d+)px\)/;
       if (pieceDiv) {
         const position = pieceDiv.style.transform.match(regex);
         if (position) {
           {
             const newX = mapToRange(parseInt(position[1], 10), squareSize);
             const newY = mapToRange(parseInt(position[2], 10), squareSize);
-            console.log(parseInt(position[1], 10), parseInt(position[2], 10));
 
             if (
               parseInt(position[1], 10) < 0 - squareSize / 2 ||
@@ -383,147 +409,135 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   };
 
   return (
-    <div
-      className="ljdr-container"
-      style={{
-        width: `${squareSize * 8}px`,
-        height: `${squareSize * 8}px`,
-      }}
-    >
+    <div id={id} className="ljdr-wrap">
       <div
-        className="ljdr-board"
+        className="ljdr-container"
         style={{
           width: `${squareSize * 8}px`,
           height: `${squareSize * 8}px`,
         }}
-        onMouseDown={(event) => handleMouseDown(-1, event)}
       >
-        {positionSelect && (
-          <div
-            className="select"
-            ref={selectRef}
-            style={{
-              width: `${squareSize}px`,
-              height: `${squareSize}px`,
-              transform: positionSelect,
-            }}
-          ></div>
-        )}
-        {positionLastMove.from && positionLastMove.to && (
-          <>
+        <div
+          className="ljdr-board"
+          onMouseDown={(event) => handleMouseDown(-1, event)}
+        >
+          {positionSelect && (
             <div
-              className="ljdr-last-move"
-              ref={lastMoveToRef}
+              className="select"
+              ref={selectRef}
               style={{
-                width: `${squareSize}px`,
-                height: `${squareSize}px`,
-                transform: positionLastMove.to,
+                transform: positionSelect,
               }}
             ></div>
-            <div
-              className="ljdr-last-move"
-              ref={lastMoveFromRef}
-              style={{
-                width: `${squareSize}px`,
-                height: `${squareSize}px`,
-                transform: positionLastMove.from,
-              }}
-            ></div>
-          </>
-        )}
-        {(() => {
-          const pieces: JSX.Element[] = [];
-          let row = 0;
-          let col = 0;
-          state.turnColor = fenTurn === 'w' ? 'white' : 'black';
+          )}
+          {positionLastMove.from && positionLastMove.to && (
+            <>
+              <div
+                className="ljdr-last-move"
+                ref={lastMoveToRef}
+                style={{
+                  transform: positionLastMove.to,
+                }}
+              ></div>
+              <div
+                className="ljdr-last-move"
+                ref={lastMoveFromRef}
+                style={{
+                  transform: positionLastMove.from,
+                }}
+              ></div>
+            </>
+          )}
+          {(() => {
+            const pieces: JSX.Element[] = [];
+            let row = 0;
+            let col = 0;
+            state.turnColor = fenTurn === 'w' ? 'white' : 'black';
 
-          for (let i = 0; i < fenPosition.length; i++) {
-            const char = fenPosition[i];
+            for (let i = 0; i < fenPosition.length; i++) {
+              const char = fenPosition[i];
 
-            if (char === '/') {
-              row += 1;
-              col = 0;
-            } else if (DIGITS.includes(char)) {
-              col += parseInt(char);
-            } else {
-              const x = col * squareSize;
-              const y = row * squareSize;
-              const columnLetter = String.fromCharCode(97 + col);
-              const rowNumber = 8 - row;
-              const square = `${columnLetter}${rowNumber}`;
-              const piece = createPiece(char);
-              state.pieces.set(square, piece);
+              if (char === '/') {
+                row += 1;
+                col = 0;
+              } else if (DIGITS.includes(char)) {
+                col += parseInt(char);
+              } else {
+                const x = col * squareSize;
+                const y = row * squareSize;
+                const columnLetter = String.fromCharCode(97 + col);
+                const rowNumber = 8 - row;
+                const square = `${columnLetter}${rowNumber}`;
+                const piece = createPiece(char);
+                state.pieces.set(square, piece);
 
-              pieces.push(
-                <div
-                  className={`ljdr-piece ${getPieceClass(char)}`}
-                  key={`${char}-${row}-${col}`}
-                  ref={(el) => (pieceRefs.current[i] = el)}
-                  style={{
-                    width: `${squareSize}px`,
-                    height: `${squareSize}px`,
-                    transform: `translate(${x}px, ${y}px)`,
-                  }}
-                  onMouseDown={(event) => handleMouseDown(i, event)}
-                  onMouseUp={handleMouseUp}
-                ></div>
-              );
+                pieces.push(
+                  <div
+                    className={`ljdr-piece ${getPieceClass(char)}`}
+                    key={`${char}-${row}-${col}`}
+                    ref={(el) => (pieceRefs.current[i] = el)}
+                    style={{
+                      transform: `translate(${x}px, ${y}px)`,
+                    }}
+                    onMouseDown={(event) => handleMouseDown(i, event)}
+                    onMouseUp={handleMouseUp}
+                  ></div>
+                );
 
-              col += 1;
+                col += 1;
+              }
             }
-          }
 
-          return pieces;
-        })()}
+            return pieces;
+          })()}
+        </div>
+        <div
+          className="coords ranks"
+          ref={ranksRef}
+          style={{
+            fontSize: `${squareSize * 0.2}px`,
+            marginTop: `${-squareSize * 0.35}px`,
+            width: `${squareSize * 0.15}px`,
+            height: `${squareSize * 8}px`,
+          }}
+        >
+          <div className="coord">1</div>
+          <div className="coord">2</div>
+          <div className="coord">3</div>
+          <div className="coord">4</div>
+          <div className="coord">5</div>
+          <div className="coord">6</div>
+          <div className="coord">7</div>
+          <div className="coord">8</div>
+        </div>
+        <div
+          className="coords files"
+          ref={filesRef}
+          style={{
+            fontSize: `${squareSize * 0.2}px`,
+            marginTop: `${squareSize * 7.75}px`,
+            marginLeft: `${squareSize * 0.38}px`,
+            width: `${squareSize * 8}px`,
+            height: `${squareSize * 0.25}px`,
+          }}
+        >
+          <div className="coord">a</div>
+          <div className="coord">b</div>
+          <div className="coord">c</div>
+          <div className="coord">d</div>
+          <div className="coord">e</div>
+          <div className="coord">f</div>
+          <div className="coord">g</div>
+          <div className="coord">h</div>
+        </div>
+        <div
+          className="ljdr-ghost"
+          ref={ghostRef}
+          style={{
+            visibility: 'hidden',
+          }}
+        ></div>
       </div>
-      <div
-        className="coords ranks"
-        ref={ranksRef}
-        style={{
-          fontSize: `${squareSize * 0.2}px`,
-          marginTop: `${-squareSize * 0.35}px`,
-          width: `${squareSize * 0.15}px`,
-          height: `${squareSize * 8}px`,
-        }}
-      >
-        <div className="coord">1</div>
-        <div className="coord">2</div>
-        <div className="coord">3</div>
-        <div className="coord">4</div>
-        <div className="coord">5</div>
-        <div className="coord">6</div>
-        <div className="coord">7</div>
-        <div className="coord">8</div>
-      </div>
-      <div
-        className="coords files"
-        ref={filesRef}
-        style={{
-          fontSize: `${squareSize * 0.2}px`,
-          marginTop: `${squareSize * 7.75}px`,
-          marginLeft: `${squareSize * 0.38}px`,
-          width: `${squareSize * 8}px`,
-          height: `${squareSize * 0.25}px`,
-        }}
-      >
-        <div className="coord">a</div>
-        <div className="coord">b</div>
-        <div className="coord">c</div>
-        <div className="coord">d</div>
-        <div className="coord">e</div>
-        <div className="coord">f</div>
-        <div className="coord">g</div>
-        <div className="coord">h</div>
-      </div>
-      <div
-        className="ljdr-ghost"
-        ref={ghostRef}
-        style={{
-          width: `${squareSize}px`,
-          height: `${squareSize}px`,
-          visibility: 'hidden',
-        }}
-      ></div>
     </div>
   );
 };
