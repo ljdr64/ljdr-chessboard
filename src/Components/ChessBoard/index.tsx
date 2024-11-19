@@ -109,21 +109,15 @@ const ChessBoard: React.FC<ChessGameProps> = ({
 
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove as EventListener, {
+      window.addEventListener('mouseup', handleMouseUp as EventListener);
+      window.addEventListener('mousemove', handleMouseMove as EventListener, {
         passive: false,
       });
-    } else {
-      document.removeEventListener(
-        'mousemove',
-        handleMouseMove as EventListener
-      );
     }
 
     return () => {
-      document.removeEventListener(
-        'mousemove',
-        handleMouseMove as EventListener
-      );
+      window.removeEventListener('mouseup', handleMouseUp as EventListener);
+      window.removeEventListener('mousemove', handleMouseMove as EventListener);
     };
   }, [isDragging]);
 
@@ -330,6 +324,12 @@ const ChessBoard: React.FC<ChessGameProps> = ({
       const pieceDiv = pieceRefs.current[draggedIndex];
       if (pieceDiv) {
         const position = pieceDiv.style.transform.match(regex);
+        const pieceRect = pieceDiv.getBoundingClientRect();
+        const isPieceOutOfBounds =
+          pieceRect.top < 0 ||
+          pieceRect.left < 0 ||
+          pieceRect.bottom > window.innerHeight ||
+          pieceRect.right > window.innerWidth;
         if (position) {
           {
             const newX = mapToRange(parseInt(position[1], 10), squareSize);
@@ -339,7 +339,8 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               parseInt(position[1], 10) < 0 - squareSize / 2 ||
               parseInt(position[2], 10) < 0 - squareSize / 2 ||
               parseInt(position[1], 10) > squareSize * 7 + squareSize / 2 ||
-              parseInt(position[2], 10) > squareSize * 7 + squareSize / 2
+              parseInt(position[2], 10) > squareSize * 7 + squareSize / 2 ||
+              isPieceOutOfBounds
             ) {
               if (ghostRef.current) {
                 ghostRef.current.style.visibility = 'hidden';
@@ -478,7 +479,6 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                       transform: `translate(${x}px, ${y}px)`,
                     }}
                     onMouseDown={(event) => handleMouseDown(i, event)}
-                    onMouseUp={handleMouseUp}
                   ></div>
                 );
 
