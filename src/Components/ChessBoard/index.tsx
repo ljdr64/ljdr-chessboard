@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 
 import { createPiece } from '../../utils/createPiece';
 import { getPieceClass } from '../../utils/getPieceClass';
@@ -95,6 +95,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const [positionSelect, setPositionSelect] = useState('');
   const [isSelect, setIsSelect] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isTouchStarted, setIsTouchStarted] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [lastMove, setLastMove] = useState('');
 
@@ -104,6 +105,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const DIGITS = '0123456789';
   const regex = /translate\((-?\d+)px, (-?\d+)px\)/;
 
+  const boardRef = useRef(null);
   const ranksRef = useRef(null);
   const filesRef = useRef(null);
 
@@ -113,19 +115,32 @@ const ChessBoard: React.FC<ChessGameProps> = ({
       window.addEventListener('mousemove', handleMouseMove as EventListener, {
         passive: false,
       });
+      window.addEventListener('touchend', handleTouchEnd as EventListener);
+      window.addEventListener('touchmove', handleTouchMove as EventListener, {
+        passive: false,
+      });
     }
 
     return () => {
       window.removeEventListener('mouseup', handleMouseUp as EventListener);
       window.removeEventListener('mousemove', handleMouseMove as EventListener);
+      window.removeEventListener('touchend', handleTouchEnd as EventListener);
+      window.removeEventListener('touchmove', handleTouchMove as EventListener);
     };
   }, [isDragging]);
 
-  const handleMouseDown = (
-    index: number,
-    event: React.MouseEvent<HTMLDivElement>
-  ) => {
+  const handleMouseDown = (index: number, event: any) => {
     event.stopPropagation();
+
+    let eventType;
+    if (event.type === 'mousedown') {
+      eventType = event;
+      setIsTouchStarted(false);
+    } else if (event.type === 'touchstart') {
+      eventType = event.touches[0];
+      setIsTouchStarted(true);
+    }
+    if (event.type === 'mousedown' && isTouchStarted) return;
 
     if (
       index === -1 &&
@@ -142,11 +157,14 @@ const ChessBoard: React.FC<ChessGameProps> = ({
       if (position) {
         const offsetX =
           parseInt(position[1], 10) +
-          event.clientX -
+          eventType.clientX -
           rect.left -
           squareSize / 2;
         const offsetY =
-          parseInt(position[2], 10) + event.clientY - rect.top - squareSize / 2;
+          parseInt(position[2], 10) +
+          eventType.clientY -
+          rect.top -
+          squareSize / 2;
         const newX = mapToRange(offsetX, squareSize);
         const newY = mapToRange(offsetY, squareSize);
         const draggedPiece = pieceRefs.current[draggedIndex];
@@ -200,12 +218,12 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           if (position) {
             const offsetX =
               parseInt(position[1], 10) +
-              event.clientX -
+              eventType.clientX -
               rect.left -
               squareSize / 2;
             const offsetY =
               parseInt(position[2], 10) +
-              event.clientY -
+              eventType.clientY -
               rect.top -
               squareSize / 2;
             pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
@@ -292,7 +310,15 @@ const ChessBoard: React.FC<ChessGameProps> = ({
     }
   };
 
-  const handleMouseMove = (event: MouseEvent) => {
+  const handleMouseMove = (event: any) => {
+    let eventType;
+
+    if (event.type === 'mousemove') {
+      eventType = event;
+    } else if (event.type === 'touchmove') {
+      eventType = event.touches[0];
+    }
+
     if (draggedIndex !== null) {
       const pieceDiv = pieceRefs.current[draggedIndex];
       if (pieceDiv) {
@@ -303,12 +329,12 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           if (isDragging) {
             const offsetX =
               parseInt(position[1], 10) +
-              event.clientX -
+              eventType.clientX -
               rect.left -
               squareSize / 2;
             const offsetY =
               parseInt(position[2], 10) +
-              event.clientY -
+              eventType.clientY -
               rect.top -
               squareSize / 2;
             pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
@@ -407,6 +433,18 @@ const ChessBoard: React.FC<ChessGameProps> = ({
     setIsDragging(false);
   };
 
+  const handleTouchStart = (index: number, event: any) => {
+    handleMouseDown(index, event);
+  };
+
+  const handleTouchMove = (event: any) => {
+    handleMouseMove(event);
+  };
+
+  const handleTouchEnd = () => {
+    handleMouseUp();
+  };
+
   return (
     <div id={id} className="ljdr-wrap">
       <div
@@ -418,7 +456,9 @@ const ChessBoard: React.FC<ChessGameProps> = ({
       >
         <div
           className="ljdr-board"
+          ref={boardRef}
           onMouseDown={(event) => handleMouseDown(-1, event)}
+          onTouchStart={(event) => handleTouchStart(-1, event)}
         >
           {positionSelect && (
             <div
@@ -479,6 +519,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                       transform: `translate(${x}px, ${y}px)`,
                     }}
                     onMouseDown={(event) => handleMouseDown(i, event)}
+                    onTouchStart={(event) => handleTouchStart(i, event)}
                   ></div>
                 );
 
@@ -521,4 +562,4 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   );
 };
 
-export default ChessBoard;
+export default memo(ChessBoard);

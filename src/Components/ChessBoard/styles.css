@@ -22,6 +22,9 @@
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  -ms-touch-action: none;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
   line-height: 0;
   background-image: url("/assets/svg/boards/green.svg");
   background-size: cover;
