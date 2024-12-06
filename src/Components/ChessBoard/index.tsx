@@ -2,6 +2,7 @@ import React, { memo, useEffect, useRef, useState } from 'react';
 
 import { createPiece } from '../../utils/createPiece';
 import { getPieceClass } from '../../utils/getPieceClass';
+import { getTranslateCoords } from '../../utils/getTranslateCoords';
 
 import './styles.css';
 
@@ -103,7 +104,6 @@ const ChessBoard: React.FC<ChessGameProps> = ({
 
   const fenTurn = initialFEN.split(' ')[1];
   const DIGITS = '0123456789';
-  const regex = /translate\((-?\d+)px, (-?\d+)px\)/;
 
   const boardRef = useRef(null);
   const ranksRef = useRef(null);
@@ -151,20 +151,14 @@ const ChessBoard: React.FC<ChessGameProps> = ({
       // select - from: piece - to: empty
       const pieceDiv = pieceRefs.current[draggedIndex];
 
-      const position = pieceDiv.style.transform.match(regex);
+      const position = getTranslateCoords(pieceDiv.style.transform);
       const rect = pieceDiv.getBoundingClientRect();
 
       if (position) {
         const offsetX =
-          parseInt(position[1], 10) +
-          eventType.clientX -
-          rect.left -
-          squareSize / 2;
+          position[0] + eventType.clientX - rect.left - squareSize / 2;
         const offsetY =
-          parseInt(position[2], 10) +
-          eventType.clientY -
-          rect.top -
-          squareSize / 2;
+          position[1] + eventType.clientY - rect.top - squareSize / 2;
         const newX = mapToRange(offsetX, squareSize);
         const newY = mapToRange(offsetY, squareSize);
         const draggedPiece = pieceRefs.current[draggedIndex];
@@ -211,28 +205,21 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           setIsDragging(true);
           setDraggedIndex(index);
 
-          const regex = /translate\((-?\d+)px, (-?\d+)px\)/;
-          const position = pieceDiv.style.transform.match(regex);
+          const position = getTranslateCoords(pieceDiv.style.transform);
           const rect = pieceDiv.getBoundingClientRect();
 
           if (position) {
             const offsetX =
-              parseInt(position[1], 10) +
-              eventType.clientX -
-              rect.left -
-              squareSize / 2;
+              position[0] + eventType.clientX - rect.left - squareSize / 2;
             const offsetY =
-              parseInt(position[2], 10) +
-              eventType.clientY -
-              rect.top -
-              squareSize / 2;
+              position[1] + eventType.clientY - rect.top - squareSize / 2;
             pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
           }
 
           pieceDiv.classList.add('drag');
           if (position && ghostRef.current) {
-            const newX = mapToRange(parseInt(position[1], 10), squareSize);
-            const newY = mapToRange(parseInt(position[2], 10), squareSize);
+            const newX = mapToRange(position[0], squareSize);
+            const newY = mapToRange(position[1], squareSize);
 
             setIsSelect((prev) => !prev);
             if (
@@ -322,21 +309,15 @@ const ChessBoard: React.FC<ChessGameProps> = ({
     if (draggedIndex !== null) {
       const pieceDiv = pieceRefs.current[draggedIndex];
       if (pieceDiv) {
-        const position = pieceDiv.style.transform.match(regex);
+        const position = getTranslateCoords(pieceDiv.style.transform);
         const rect = pieceDiv.getBoundingClientRect();
 
         if (position) {
           if (isDragging) {
             const offsetX =
-              parseInt(position[1], 10) +
-              eventType.clientX -
-              rect.left -
-              squareSize / 2;
+              position[0] + eventType.clientX - rect.left - squareSize / 2;
             const offsetY =
-              parseInt(position[2], 10) +
-              eventType.clientY -
-              rect.top -
-              squareSize / 2;
+              position[1] + eventType.clientY - rect.top - squareSize / 2;
             pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
           }
         }
@@ -349,7 +330,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
     if (draggedIndex !== null) {
       const pieceDiv = pieceRefs.current[draggedIndex];
       if (pieceDiv) {
-        const position = pieceDiv.style.transform.match(regex);
+        const position = getTranslateCoords(pieceDiv.style.transform);
         const pieceRect = pieceDiv.getBoundingClientRect();
         const isPieceOutOfBounds =
           pieceRect.top < 0 ||
@@ -358,14 +339,14 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           pieceRect.right > window.innerWidth;
         if (position) {
           {
-            const newX = mapToRange(parseInt(position[1], 10), squareSize);
-            const newY = mapToRange(parseInt(position[2], 10), squareSize);
+            const newX = mapToRange(position[0], squareSize);
+            const newY = mapToRange(position[1], squareSize);
 
             if (
-              parseInt(position[1], 10) < 0 - squareSize / 2 ||
-              parseInt(position[2], 10) < 0 - squareSize / 2 ||
-              parseInt(position[1], 10) > squareSize * 7 + squareSize / 2 ||
-              parseInt(position[2], 10) > squareSize * 7 + squareSize / 2 ||
+              position[0] < 0 - squareSize / 2 ||
+              position[1] < 0 - squareSize / 2 ||
+              position[0] > squareSize * 7 + squareSize / 2 ||
+              position[1] > squareSize * 7 + squareSize / 2 ||
               isPieceOutOfBounds
             ) {
               if (ghostRef.current) {
