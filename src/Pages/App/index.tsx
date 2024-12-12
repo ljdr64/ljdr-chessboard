@@ -7,6 +7,15 @@ const App: React.FC = () => {
   const initialFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
   const squareSize = 60;
   const transitionDuration = '0.2s';
+  const draggableConfigBoard1 = {
+    distance: 120,
+    showGhost: false,
+    deleteOnDropOff: true,
+  };
+  const draggableConfigBoard2 = {
+    distance: 0,
+  };
+
   return (
     <div className="board-main">
       <div className="board-container">
@@ -15,6 +24,7 @@ const App: React.FC = () => {
           initialFEN={initialFEN}
           squareSize={squareSize}
           transitionDuration={transitionDuration}
+          draggable={draggableConfigBoard1}
         />
       </div>
       <div className="board-container">
@@ -23,6 +33,7 @@ const App: React.FC = () => {
           initialFEN={initialFEN}
           squareSize={squareSize}
           transitionDuration={transitionDuration}
+          draggable={draggableConfigBoard2}
         />
       </div>
     </div>

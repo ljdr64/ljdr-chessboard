@@ -21,6 +21,7 @@ interface ChessGameProps {
   initialFEN: string;
   squareSize: number;
   transitionDuration: string;
+  draggable?: Partial<DraggableConfig>;
 }
 
 interface GameState {
@@ -61,6 +62,31 @@ const state: GameState = {
   },
 };
 
+interface DraggableConfig {
+  enabled: boolean; // Allow moves & premoves to use drag'n drop
+  distance: number; // Minimum distance to initiate a drag; in pixels
+  autoDistance: boolean; // Let chessboard set distance to zero when dragging pieces
+  showGhost: boolean; // Show a ghost of the piece being dragged
+  deleteOnDropOff: boolean; // Delete a piece when dropped off the board
+  current?: DragCurrent; // Optional: Information about the currently dragged piece
+}
+
+interface DragCurrent {
+  piece: string; // Piece being dragged (e.g., 'N', 'B', 'R')
+  from: string; // Square the piece is dragged from (e.g., 'e2')
+  to?: string; // Square the piece is dragged to (e.g., 'e4')
+  posX: number; // X position of the piece during drag
+  posY: number; // Y position of the piece during drag
+}
+
+const defaultDraggable: Omit<DraggableConfig, 'current'> = {
+  enabled: true,
+  distance: 3,
+  autoDistance: true,
+  showGhost: true,
+  deleteOnDropOff: false,
+};
+
 const mapToRange = (num: number, squareSize: number): number[] => {
   const adjustedNum = num + squareSize / 2;
   const coords = Math.floor(adjustedNum / squareSize);
@@ -81,6 +107,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   initialFEN,
   squareSize,
   transitionDuration,
+  draggable,
 }) => {
   const pieceRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const ghostRef = useRef<HTMLDivElement>(null);
@@ -99,6 +126,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const [isTouchStarted, setIsTouchStarted] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [lastMove, setLastMove] = useState('');
+  const [lastOffset, setLastOffset] = useState([0, 0]);
 
   const pieceRefsCurrent = pieceRefs.current;
 
@@ -108,6 +136,10 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const boardRef = useRef(null);
   const ranksRef = useRef(null);
   const filesRef = useRef(null);
+
+  const configDraggable = { ...defaultDraggable, ...draggable };
+
+  let distancePassed = false;
 
   useEffect(() => {
     if (isDragging) {
@@ -208,16 +240,21 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           const position = getTranslateCoords(pieceDiv.style.transform);
           const rect = pieceDiv.getBoundingClientRect();
 
-          if (position) {
-            const offsetX =
-              position[0] + eventType.clientX - rect.left - squareSize / 2;
-            const offsetY =
-              position[1] + eventType.clientY - rect.top - squareSize / 2;
-            pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+          if (configDraggable.enabled) {
+            if (position) {
+              const offsetX =
+                position[0] + eventType.clientX - rect.left - squareSize / 2;
+              const offsetY =
+                position[1] + eventType.clientY - rect.top - squareSize / 2;
+              setLastOffset([offsetX, offsetY]);
+              if (configDraggable.distance === 0) {
+                pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+              }
+            }
+            pieceDiv.classList.add('drag');
           }
 
-          pieceDiv.classList.add('drag');
-          if (position && ghostRef.current) {
+          if (position) {
             const newX = mapToRange(position[0], squareSize);
             const newY = mapToRange(position[1], squareSize);
 
@@ -231,22 +268,24 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               setPositionSelect(`translate(${newX[1]}px, ${newY[1]}px)`);
             }
 
-            ghostRef.current.style.visibility = 'visible';
-            ghostRef.current.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
-            if (ghostRef.current.classList.length > 2) {
-              const firstOldClass = ghostRef.current.classList[1];
-              const secondOldClass = ghostRef.current.classList[2];
-              ghostRef.current.classList.replace(
-                firstOldClass,
-                pieceDiv.classList[1]
-              );
-              ghostRef.current.classList.replace(
-                secondOldClass,
-                pieceDiv.classList[2]
-              );
-            } else {
-              ghostRef.current.classList.add(pieceDiv.classList[1]);
-              ghostRef.current.classList.add(pieceDiv.classList[2]);
+            if (ghostRef.current) {
+              ghostRef.current.style.visibility = 'visible';
+              ghostRef.current.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
+              if (ghostRef.current.classList.length > 2) {
+                const firstOldClass = ghostRef.current.classList[1];
+                const secondOldClass = ghostRef.current.classList[2];
+                ghostRef.current.classList.replace(
+                  firstOldClass,
+                  pieceDiv.classList[1]
+                );
+                ghostRef.current.classList.replace(
+                  secondOldClass,
+                  pieceDiv.classList[2]
+                );
+              } else {
+                ghostRef.current.classList.add(pieceDiv.classList[1]);
+                ghostRef.current.classList.add(pieceDiv.classList[2]);
+              }
             }
           }
         } else if (pieceRefs.current[draggedIndex]) {
@@ -306,19 +345,32 @@ const ChessBoard: React.FC<ChessGameProps> = ({
       eventType = event.touches[0];
     }
 
-    if (draggedIndex !== null) {
-      const pieceDiv = pieceRefs.current[draggedIndex];
-      if (pieceDiv) {
-        const position = getTranslateCoords(pieceDiv.style.transform);
-        const rect = pieceDiv.getBoundingClientRect();
+    if (configDraggable.enabled) {
+      if (draggedIndex !== null) {
+        const pieceDiv = pieceRefs.current[draggedIndex];
+        if (pieceDiv) {
+          const position = getTranslateCoords(pieceDiv.style.transform);
+          const rect = pieceDiv.getBoundingClientRect();
 
-        if (position) {
-          if (isDragging) {
-            const offsetX =
-              position[0] + eventType.clientX - rect.left - squareSize / 2;
-            const offsetY =
-              position[1] + eventType.clientY - rect.top - squareSize / 2;
-            pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+          if (position) {
+            if (isDragging) {
+              const offsetX =
+                position[0] + eventType.clientX - rect.left - squareSize / 2;
+              const offsetY =
+                position[1] + eventType.clientY - rect.top - squareSize / 2;
+
+              if (distancePassed) {
+                pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+              } else {
+                if (
+                  Math.hypot(lastOffset[0] - offsetX, lastOffset[1] - offsetY) >
+                  configDraggable.distance
+                ) {
+                  pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+                  distancePassed = true;
+                }
+              }
+            }
           }
         }
       }
@@ -349,6 +401,9 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               position[1] > squareSize * 7 + squareSize / 2 ||
               isPieceOutOfBounds
             ) {
+              if (configDraggable.deleteOnDropOff) {
+                pieceDiv.remove();
+              }
               if (ghostRef.current) {
                 ghostRef.current.style.visibility = 'hidden';
               }
@@ -531,13 +586,15 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           <div className="coord">g</div>
           <div className="coord">h</div>
         </div>
-        <div
-          className="ljdr-ghost"
-          ref={ghostRef}
-          style={{
-            visibility: 'hidden',
-          }}
-        ></div>
+        {configDraggable.showGhost && (
+          <div
+            className="ljdr-ghost"
+            ref={ghostRef}
+            style={{
+              visibility: 'hidden',
+            }}
+          ></div>
+        )}
       </div>
     </div>
   );
