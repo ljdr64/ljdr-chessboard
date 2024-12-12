@@ -8,12 +8,13 @@ const App: React.FC = () => {
   const squareSize = 60;
   const transitionDuration = '0.2s';
   const draggableConfigBoard1 = {
-    distance: 120,
+    distance: 3,
     showGhost: false,
     deleteOnDropOff: true,
   };
   const draggableConfigBoard2 = {
-    distance: 0,
+    distance: 3,
+    autoDistance: false,
   };
 
   return (

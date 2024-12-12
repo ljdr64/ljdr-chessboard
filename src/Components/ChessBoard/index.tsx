@@ -68,18 +68,9 @@ interface DraggableConfig {
   autoDistance: boolean; // Let chessboard set distance to zero when dragging pieces
   showGhost: boolean; // Show a ghost of the piece being dragged
   deleteOnDropOff: boolean; // Delete a piece when dropped off the board
-  current?: DragCurrent; // Optional: Information about the currently dragged piece
 }
 
-interface DragCurrent {
-  piece: string; // Piece being dragged (e.g., 'N', 'B', 'R')
-  from: string; // Square the piece is dragged from (e.g., 'e2')
-  to?: string; // Square the piece is dragged to (e.g., 'e4')
-  posX: number; // X position of the piece during drag
-  posY: number; // Y position of the piece during drag
-}
-
-const defaultDraggable: Omit<DraggableConfig, 'current'> = {
+const defaultDraggable: DraggableConfig = {
   enabled: true,
   distance: 3,
   autoDistance: true,
@@ -127,6 +118,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [lastMove, setLastMove] = useState('');
   const [lastOffset, setLastOffset] = useState([0, 0]);
+  const [lastMoveType, setLastMoveType] = useState<'select' | 'drag'>('drag');
 
   const pieceRefsCurrent = pieceRefs.current;
 
@@ -223,6 +215,10 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           };
           draggedPiece.addEventListener('transitionend', handleTransitionEnd);
         }
+
+        if (configDraggable.autoDistance) {
+          setLastMoveType('select');
+        }
       }
     } else {
       // select - from = to (piece selected)
@@ -247,7 +243,10 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               const offsetY =
                 position[1] + eventType.clientY - rect.top - squareSize / 2;
               setLastOffset([offsetX, offsetY]);
-              if (configDraggable.distance === 0) {
+              if (
+                configDraggable.distance === 0 ||
+                (configDraggable.autoDistance && lastMoveType === 'drag')
+              ) {
                 pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
               }
             }
@@ -328,6 +327,9 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                 handleTransitionEnd
               );
             }
+            if (configDraggable.autoDistance) {
+              setLastMoveType('select');
+            }
           } else {
             setDraggedIndex(null);
           }
@@ -364,7 +366,8 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               } else {
                 if (
                   Math.hypot(lastOffset[0] - offsetX, lastOffset[1] - offsetY) >
-                  configDraggable.distance
+                    configDraggable.distance ||
+                  (configDraggable.autoDistance && lastMoveType === 'drag')
                 ) {
                   pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
                   distancePassed = true;
@@ -428,6 +431,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                       updateFENForTake(fenPosition, parseInt(key, 10))
                     );
                     setDraggedIndex(null);
+                    setLastMoveType('drag');
                   }
                 }
               });
@@ -440,6 +444,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               if (lastMove !== pieceDiv.style.transform) {
                 setPositionSelect('');
                 setIsSelect(false);
+                setLastMoveType('drag');
                 setPositionLastMove({
                   from: lastMove,
                   to: pieceDiv.style.transform,
