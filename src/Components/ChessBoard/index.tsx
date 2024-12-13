@@ -1,82 +1,16 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-
-import { createPiece } from '../../utils/createPiece';
+import {
+  ChessGameProps,
+  defaultId,
+  defaultFEN,
+  defaultSquareSize,
+  defaultTransitionDuration,
+  defaultDraggable,
+} from './props';
 import { getPieceClass } from '../../utils/getPieceClass';
 import { getTranslateCoords } from '../../utils/getTranslateCoords';
 
 import './styles.css';
-
-interface Piece {
-  color: 'white' | 'black';
-  role: 'pawn' | 'rook' | 'knight' | 'bishop' | 'queen' | 'king';
-}
-
-interface EmptyPiece {
-  color: '';
-  role: '';
-}
-
-interface ChessGameProps {
-  id: string;
-  initialFEN: string;
-  squareSize: number;
-  transitionDuration: string;
-  draggable?: Partial<DraggableConfig>;
-}
-
-interface GameState {
-  pieces: Map<string, Piece | EmptyPiece>;
-  orientation: 'white' | 'black';
-  turnColor: 'white' | 'black';
-  coordinates: boolean;
-  ranksPosition: 'left' | 'right';
-  autoCastle: boolean;
-  viewOnly: boolean;
-  highlight: {
-    lastMove: boolean;
-    check: boolean;
-  };
-  movable: {
-    free: boolean;
-    color: 'both' | 'white' | 'black';
-    showDests: boolean;
-  };
-}
-
-const state: GameState = {
-  pieces: new Map(),
-  orientation: 'white',
-  turnColor: 'white',
-  coordinates: true,
-  ranksPosition: 'right',
-  autoCastle: true,
-  viewOnly: false,
-  highlight: {
-    lastMove: true,
-    check: true,
-  },
-  movable: {
-    free: true,
-    color: 'both',
-    showDests: true,
-  },
-};
-
-interface DraggableConfig {
-  enabled: boolean; // Allow moves & premoves to use drag'n drop
-  distance: number; // Minimum distance to initiate a drag; in pixels
-  autoDistance: boolean; // Let chessboard set distance to zero when dragging pieces
-  showGhost: boolean; // Show a ghost of the piece being dragged
-  deleteOnDropOff: boolean; // Delete a piece when dropped off the board
-}
-
-const defaultDraggable: DraggableConfig = {
-  enabled: true,
-  distance: 3,
-  autoDistance: true,
-  showGhost: true,
-  deleteOnDropOff: false,
-};
 
 const mapToRange = (num: number, squareSize: number): number[] => {
   const adjustedNum = num + squareSize / 2;
@@ -94,19 +28,21 @@ const updateFENForTake = (fen: string, index: number): string => {
 };
 
 const ChessBoard: React.FC<ChessGameProps> = ({
-  id,
-  initialFEN,
-  squareSize,
-  transitionDuration,
-  draggable,
+  id = defaultId,
+  fen = defaultFEN,
+  squareSize = defaultSquareSize,
+  transitionDuration = defaultTransitionDuration,
+  draggable = defaultDraggable,
 }) => {
+  const draggableConfig = { ...defaultDraggable, ...draggable };
+
   const pieceRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const ghostRef = useRef<HTMLDivElement>(null);
   const selectRef = useRef<HTMLDivElement>(null);
   const lastMoveToRef = useRef<HTMLDivElement>(null);
   const lastMoveFromRef = useRef<HTMLDivElement>(null);
 
-  const [fenPosition, setFenPosition] = useState(initialFEN.split(' ')[0]);
+  const [fenPosition, setFenPosition] = useState(fen.split(' ')[0]);
   const [positionLastMove, setPositionLastMove] = useState({
     from: '',
     to: '',
@@ -121,15 +57,11 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const [lastMoveType, setLastMoveType] = useState<'select' | 'drag'>('drag');
 
   const pieceRefsCurrent = pieceRefs.current;
-
-  const fenTurn = initialFEN.split(' ')[1];
   const DIGITS = '0123456789';
 
   const boardRef = useRef(null);
   const ranksRef = useRef(null);
   const filesRef = useRef(null);
-
-  const configDraggable = { ...defaultDraggable, ...draggable };
 
   let distancePassed = false;
 
@@ -216,7 +148,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           draggedPiece.addEventListener('transitionend', handleTransitionEnd);
         }
 
-        if (configDraggable.autoDistance) {
+        if (draggableConfig.autoDistance) {
           setLastMoveType('select');
         }
       }
@@ -236,7 +168,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           const position = getTranslateCoords(pieceDiv.style.transform);
           const rect = pieceDiv.getBoundingClientRect();
 
-          if (configDraggable.enabled) {
+          if (draggableConfig.enabled) {
             if (position) {
               const offsetX =
                 position[0] + eventType.clientX - rect.left - squareSize / 2;
@@ -244,8 +176,8 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                 position[1] + eventType.clientY - rect.top - squareSize / 2;
               setLastOffset([offsetX, offsetY]);
               if (
-                configDraggable.distance === 0 ||
-                (configDraggable.autoDistance && lastMoveType === 'drag')
+                draggableConfig.distance === 0 ||
+                (draggableConfig.autoDistance && lastMoveType === 'drag')
               ) {
                 pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
               }
@@ -327,7 +259,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                 handleTransitionEnd
               );
             }
-            if (configDraggable.autoDistance) {
+            if (draggableConfig.autoDistance) {
               setLastMoveType('select');
             }
           } else {
@@ -347,7 +279,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
       eventType = event.touches[0];
     }
 
-    if (configDraggable.enabled) {
+    if (draggableConfig.enabled) {
       if (draggedIndex !== null) {
         const pieceDiv = pieceRefs.current[draggedIndex];
         if (pieceDiv) {
@@ -366,8 +298,8 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               } else {
                 if (
                   Math.hypot(lastOffset[0] - offsetX, lastOffset[1] - offsetY) >
-                    configDraggable.distance ||
-                  (configDraggable.autoDistance && lastMoveType === 'drag')
+                    draggableConfig.distance ||
+                  (draggableConfig.autoDistance && lastMoveType === 'drag')
                 ) {
                   pieceDiv.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
                   distancePassed = true;
@@ -404,7 +336,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               position[1] > squareSize * 7 + squareSize / 2 ||
               isPieceOutOfBounds
             ) {
-              if (configDraggable.deleteOnDropOff) {
+              if (draggableConfig.deleteOnDropOff) {
                 pieceDiv.remove();
               }
               if (ghostRef.current) {
@@ -532,7 +464,6 @@ const ChessBoard: React.FC<ChessGameProps> = ({
             const pieces: JSX.Element[] = [];
             let row = 0;
             let col = 0;
-            state.turnColor = fenTurn === 'w' ? 'white' : 'black';
 
             for (let i = 0; i < fenPosition.length; i++) {
               const char = fenPosition[i];
@@ -545,11 +476,6 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               } else {
                 const x = col * squareSize;
                 const y = row * squareSize;
-                const columnLetter = String.fromCharCode(97 + col);
-                const rowNumber = 8 - row;
-                const square = `${columnLetter}${rowNumber}`;
-                const piece = createPiece(char);
-                state.pieces.set(square, piece);
 
                 pieces.push(
                   <div
@@ -591,7 +517,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           <div className="coord">g</div>
           <div className="coord">h</div>
         </div>
-        {configDraggable.showGhost && (
+        {draggableConfig.showGhost && (
           <div
             className="ljdr-ghost"
             ref={ghostRef}
