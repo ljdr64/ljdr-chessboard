@@ -1,8 +1,15 @@
 export interface ChessGameProps {
   id?: string;
   fen?: string;
+  orientation?: string;
+  turnColor?: string;
+  lastMove?: string[];
+  coordinates?: boolean;
   squareSize?: number;
-  transitionDuration?: string;
+  animation?: {
+    enabled?: boolean;
+    duration?: number;
+  };
   draggable?: {
     enabled?: boolean;
     distance?: number;
@@ -15,8 +22,15 @@ export interface ChessGameProps {
 export const defaultId = 'default-id';
 export const defaultFEN =
   'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+export const defaultOrientation = 'white';
+export const defaultTurnColor = 'white';
+export const defaultLastMove = ['', ''];
+export const defaultCoordinates = true;
 export const defaultSquareSize = 60;
-export const defaultTransitionDuration = '0.2s';
+export const defaultAnimation = {
+  enabled: true,
+  duration: 200,
+};
 export const defaultDraggable = {
   enabled: true,
   distance: 3,
