@@ -16,6 +16,7 @@ import { getTranslateCoords } from '../../utils/getTranslateCoords';
 import { notationToTranslate } from '../../utils/notationToTranslate';
 
 import './styles.css';
+import { animateMove } from '../../utils/animateMove';
 
 const mapToRange = (num: number, squareSize: number): number[] => {
   const adjustedNum = num + squareSize / 2;
@@ -130,45 +131,37 @@ const ChessBoard: React.FC<ChessGameProps> = ({
         const newX = mapToRange(offsetX, squareSize);
         const newY = mapToRange(offsetY, squareSize);
         const draggedPiece = pieceRefs.current[draggedIndex];
-        if (animationConfig.enabled) {
+
+        if (animationConfig.enabled && animationConfig.duration > 0) {
           draggedPiece.classList.add('animate');
-          draggedPiece.style.transitionDuration =
-            animationConfig.duration?.toString() + 'ms';
+          animateMove(
+            draggedPiece,
+            getTranslateCoords(draggedPiece.style.transform),
+            getTranslateCoords(`translate(${newX[1]}px, ${newY[1]}px)`),
+            animationConfig.duration,
+            () => {
+              setTimeout(() => {
+                draggedPiece.classList.remove('animate');
+              }, 0);
+              setDraggedIndex(null);
+            }
+          );
+        } else {
+          draggedPiece.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
+          setDraggedIndex(null);
         }
-        draggedPiece.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
 
         setPositionSelect('');
         setIsSelect((prev) => !prev);
         setPositionLastMove({
           from: lastTranslate,
-          to: draggedPiece.style.transform,
+          to: `translate(${newX[1]}px, ${newY[1]}px)`,
         });
         if (lastMoveToRef.current) {
           lastMoveToRef.current.classList.remove('select');
         }
-
-        if (draggedPiece) {
-          if (animationConfig.enabled) {
-            const handleTransitionEnd = () => {
-              draggedPiece.removeEventListener(
-                'transitionend',
-                handleTransitionEnd
-              );
-
-              setTimeout(() => {
-                draggedPiece.classList.remove('animate');
-                draggedPiece.style.transitionDuration = '';
-              }, 0);
-              setDraggedIndex(null);
-            };
-            draggedPiece.addEventListener('transitionend', handleTransitionEnd);
-          } else {
-            setDraggedIndex(null);
-          }
-
-          if (draggableConfig.autoDistance) {
-            setLastMoveType('select');
-          }
+        if (draggableConfig.autoDistance) {
+          setLastMoveType('select');
         }
       }
     } else {
@@ -244,47 +237,38 @@ const ChessBoard: React.FC<ChessGameProps> = ({
             const draggedPiece = pieceRefs.current[draggedIndex];
 
             pieceDiv.classList.add('fade');
-            if (animationConfig.enabled) {
+            if (animationConfig.enabled && animationConfig.duration > 0) {
               draggedPiece.classList.add('animate');
-              draggedPiece.style.transitionDuration =
-                animationConfig.duration?.toString() + 'ms';
+              animateMove(
+                draggedPiece,
+                getTranslateCoords(draggedPiece.style.transform),
+                getTranslateCoords(pieceDiv.style.transform),
+                animationConfig.duration,
+                () => {
+                  setFenPosition(updateFENForTake(fenPosition, index));
+                  setTimeout(() => {
+                    pieceDiv.classList.remove('fade');
+                    draggedPiece.classList.remove('animate');
+                  }, 0);
+                  setDraggedIndex(null);
+                }
+              );
+            } else {
+              draggedPiece.style.transform = pieceDiv.style.transform;
+              setFenPosition(updateFENForTake(fenPosition, index));
+              setDraggedIndex(null);
             }
-            draggedPiece.style.transform = pieceDiv.style.transform;
 
             setPositionSelect('');
             setIsSelect((prev) => !prev);
             setPositionLastMove({
               from: lastTranslate,
-              to: draggedPiece.style.transform,
+              to: pieceDiv.style.transform,
             });
             if (lastMoveToRef.current) {
               lastMoveToRef.current.classList.remove('select');
             }
 
-            if (draggedPiece) {
-              if (animationConfig.enabled) {
-                const handleTransitionEnd = () => {
-                  draggedPiece.removeEventListener(
-                    'transitionend',
-                    handleTransitionEnd
-                  );
-
-                  setFenPosition(updateFENForTake(fenPosition, index));
-                  setTimeout(() => {
-                    pieceDiv.classList.remove('fade');
-                    draggedPiece.classList.remove('animate');
-                    draggedPiece.style.transitionDuration = '';
-                  }, 0);
-                  setDraggedIndex(null);
-                };
-                draggedPiece.addEventListener(
-                  'transitionend',
-                  handleTransitionEnd
-                );
-              } else {
-                setFenPosition(updateFENForTake(fenPosition, index));
-              }
-            }
             if (draggableConfig.autoDistance) {
               setLastMoveType('select');
             }
@@ -356,8 +340,8 @@ const ChessBoard: React.FC<ChessGameProps> = ({
             const newY = mapToRange(position[1], squareSize);
 
             if (
-              position[0] < 0 - squareSize / 2 ||
-              position[1] < 0 - squareSize / 2 ||
+              position[0] < -squareSize / 2 ||
+              position[1] < -squareSize / 2 ||
               position[0] > squareSize * 7 + squareSize / 2 ||
               position[1] > squareSize * 7 + squareSize / 2 ||
               isPieceOutOfBounds
