@@ -328,12 +328,6 @@ const ChessBoard: React.FC<ChessGameProps> = ({
       const pieceDiv = pieceRefs.current[draggedIndex];
       if (pieceDiv) {
         const position = getTranslateCoords(pieceDiv.style.transform);
-        const pieceRect = pieceDiv.getBoundingClientRect();
-        const isPieceOutOfBounds =
-          pieceRect.top < 0 ||
-          pieceRect.left < 0 ||
-          pieceRect.bottom > window.innerHeight ||
-          pieceRect.right > window.innerWidth;
         if (position) {
           {
             const newX = mapToRange(position[0], squareSize);
@@ -343,11 +337,10 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               position[0] < -squareSize / 2 ||
               position[1] < -squareSize / 2 ||
               position[0] > squareSize * 7 + squareSize / 2 ||
-              position[1] > squareSize * 7 + squareSize / 2 ||
-              isPieceOutOfBounds
+              position[1] > squareSize * 7 + squareSize / 2
             ) {
               if (draggableConfig.deleteOnDropOff) {
-                pieceDiv.remove();
+                setFenPosition(updateFENForTake(fenPosition, draggedIndex));
               }
               if (ghostRef.current) {
                 ghostRef.current.style.visibility = 'hidden';
