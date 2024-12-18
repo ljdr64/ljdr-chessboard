@@ -1,30 +1,32 @@
 /**
- * Animates the movement of a chess piece from one position to another using the translate property.
- * The animation uses an ease-in-out effect.
+ * Handles the movement animation of a chess piece and allows for abrupt termination.
  *
- * @param pieceDiv - The reference to the chess piece element (HTMLDivElement) that will be moved. It can be null if not yet assigned.
+ * @param pieceDiv - The reference to the piece element being moved.
  * @param startPos - The starting position of the piece as an array [x, y].
  * @param endPos - The target position of the piece as an array [x, y].
  * @param duration - The duration of the animation in milliseconds.
- * @param onFinish - A callback function that is called when the animation finishes.
+ * @param onComplete - A callback function to be called when the animation completes successfully.
+ * @param onCancel - A callback function to be called when the animation is canceled abruptly.
+ *
+ * @returns A function that can be called to abruptly finish the animation and set the piece to its final position.
  */
 export const animateMove = (
   pieceDiv: HTMLDivElement | null,
   startPos: [number, number],
   endPos: [number, number],
   duration: number,
-  onFinish?: () => void
+  onComplete?: () => void,
+  onCancel?: () => void
 ) => {
   if (!pieceDiv) return;
 
   let startTime: number;
+  let animationFrame: number;
 
-  // Ease-in-out function for smoother transition
   const easeInOut = (t: number) => {
     return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
   };
 
-  // Animation function to move the piece
   const animate = (timestamp: number) => {
     if (!startTime) startTime = timestamp;
 
@@ -32,25 +34,29 @@ export const animateMove = (
     const easedProgress = easeInOut(progress); // Apply easing function
 
     if (progress < 1) {
-      // Calculate the new position based on eased progress
       const newX = startPos[0] + (endPos[0] - startPos[0]) * easedProgress;
       const newY = startPos[1] + (endPos[1] - startPos[1]) * easedProgress;
 
-      // Apply the new position
       if (pieceDiv) {
         pieceDiv.style.transform = `translate(${newX}px, ${newY}px)`;
       }
 
-      requestAnimationFrame(animate); // Continue animating
+      animationFrame = requestAnimationFrame(animate); // Continue animating
     } else {
-      // When progress reaches 1, apply the final position
       if (pieceDiv) {
         pieceDiv.style.transform = `translate(${endPos[0]}px, ${endPos[1]}px)`;
       }
-      onFinish?.(); // Call the callback function when the animation finishes
+      onComplete?.();
     }
   };
 
-  // Start the animation
-  requestAnimationFrame(animate);
+  animationFrame = requestAnimationFrame(animate);
+
+  return () => {
+    cancelAnimationFrame(animationFrame);
+    if (pieceDiv) {
+      pieceDiv.style.transform = `translate(${endPos[0]}px, ${endPos[1]}px)`;
+    }
+    onCancel?.();
+  };
 };
