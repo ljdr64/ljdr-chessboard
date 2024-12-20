@@ -76,6 +76,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const filesRef = useRef(null);
 
   let distancePassed = false;
+  let isPieceTakenByDrag = false;
 
   useEffect(() => {
     if (isDragging) {
@@ -391,6 +392,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                     draggedIndex !== parseInt(key, 10)
                   ) {
                     // drag - from: piece - to: piece
+                    isPieceTakenByDrag = true;
                     if (lastAnimation) {
                       lastAnimation();
                       setFenPosition(
@@ -418,6 +420,12 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               // drag - from: piece - to: empty
               pieceDiv.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
               if (lastTranslate !== pieceDiv.style.transform) {
+                if (!isPieceTakenByDrag) {
+                  if (lastAnimation) {
+                    lastAnimation();
+                    setLastAnimation(null);
+                  }
+                }
                 setPositionSelect('');
                 setIsSelect(false);
                 setLastMoveType('drag');

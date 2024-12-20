@@ -15,7 +15,7 @@ const App: React.FC = () => {
           animation={{ enabled: true, duration: 2000 }}
           draggable={{
             distance: 3,
-            showGhost: false,
+            showGhost: true,
             deleteOnDropOff: true,
           }}
         />
