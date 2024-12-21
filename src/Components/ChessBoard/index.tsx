@@ -416,21 +416,36 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                   ) {
                     // drag - from: piece - to: piece
                     isPieceTakenByDrag = true;
+
                     if (lastAnimation) {
                       lastAnimation();
-                      setFenPosition(
-                        updateFENForTake(lastFenPosition, parseInt(key, 10))
-                      );
-                      setLastFenPosition(
-                        updateFENForTake(lastFenPosition, parseInt(key, 10))
-                      );
-                      setLastAnimation(null);
+                      if (pieceRef.style.transform === positionLastMove.to) {
+                        if (lastIndex !== null) {
+                          setFenPosition(
+                            updateFENForTake(lastFenPosition, lastIndex)
+                          );
+                          setLastFenPosition(
+                            updateFENForTake(lastFenPosition, lastIndex)
+                          );
+                        }
+                      } else {
+                        setFenPosition(
+                          updateFENForTake(lastFenPosition, parseInt(key, 10))
+                        );
+                        setLastFenPosition(
+                          updateFENForTake(lastFenPosition, parseInt(key, 10))
+                        );
+                      }
                     } else {
                       setFenPosition(
                         updateFENForTake(fenPosition, parseInt(key, 10))
                       );
-                      setLastAnimation(null);
+                      setLastFenPosition(
+                        updateFENForTake(fenPosition, parseInt(key, 10))
+                      );
                     }
+
+                    setLastAnimation(null);
                     setDraggedIndex(null);
                     setLastMoveType('drag');
                   }
@@ -447,6 +462,15 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                   if (lastAnimation) {
                     lastAnimation();
                     setLastAnimation(null);
+                  }
+                  if (
+                    pieceDiv.style.transform === positionLastMove.to &&
+                    lastIndex !== null
+                  ) {
+                    setFenPosition(updateFENForTake(fenPosition, lastIndex));
+                    setLastFenPosition(
+                      updateFENForTake(fenPosition, lastIndex)
+                    );
                   }
                 }
                 setPositionSelect('');
