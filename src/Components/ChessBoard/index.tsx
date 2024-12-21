@@ -61,6 +61,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isTouchStarted, setIsTouchStarted] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [lastIndex, setLastIndex] = useState<number | null>(null);
   const [lastTranslate, setLastTranslate] = useState('');
   const [lastAnimation, setLastAnimation] = useState<(() => void) | null>(null);
   const [lastOffset, setLastOffset] = useState([0, 0]);
@@ -146,14 +147,26 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               setTimeout(() => {
                 draggedPiece.classList.remove('animate');
               }, 0);
-              setDraggedIndex(null);
               setLastAnimation(null);
+              if (
+                positionLastMove.to === `translate(${newX[1]}px, ${newY[1]}px)`
+              ) {
+                if (lastIndex !== null) {
+                  setFenPosition(updateFENForTake(lastFenPosition, lastIndex));
+                }
+              }
             },
             () => {
               setTimeout(() => {
                 draggedPiece.classList.remove('animate');
               }, 0);
-              setDraggedIndex(null);
+              if (
+                positionLastMove.to === `translate(${newX[1]}px, ${newY[1]}px)`
+              ) {
+                if (lastIndex !== null) {
+                  setFenPosition(updateFENForTake(lastFenPosition, lastIndex));
+                }
+              }
             }
           );
           setLastAnimation(() => finishAnimation);
@@ -168,6 +181,17 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           from: lastTranslate,
           to: `translate(${newX[1]}px, ${newY[1]}px)`,
         });
+
+        if (positionLastMove.to === `translate(${newX[1]}px, ${newY[1]}px)`) {
+          if (lastIndex !== null) {
+            setLastFenPosition((prev) => updateFENForTake(prev, lastIndex));
+            const lastPiece = pieceRefs.current[lastIndex];
+            if (lastPiece) {
+              lastPiece.classList.add('fade');
+            }
+          }
+        }
+
         if (lastMoveToRef.current) {
           lastMoveToRef.current.classList.remove('select');
         }
@@ -186,6 +210,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           (draggedIndex !== index && !isSelect)
         ) {
           setIsDragging(true);
+          setLastIndex(draggedIndex);
           setDraggedIndex(index);
 
           const position = getTranslateCoords(pieceDiv.style.transform);
@@ -268,7 +293,6 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                     pieceDiv.classList.remove('fade');
                     draggedPiece.classList.remove('animate');
                   }, 0);
-                  setDraggedIndex(null);
                   setLastAnimation(null);
                 },
                 () => {
@@ -277,7 +301,6 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                     pieceDiv.classList.remove('fade');
                     draggedPiece.classList.remove('animate');
                   }, 0);
-                  setDraggedIndex(null);
                   setLastAnimation(null);
                 }
               );
