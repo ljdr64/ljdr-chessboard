@@ -13,10 +13,11 @@ import {
 } from './props';
 import { getPieceClass } from '../../utils/getPieceClass';
 import { getTranslateCoords } from '../../utils/getTranslateCoords';
+import { coordsToTranslate } from '../../utils/coordsToTranslate';
 import { notationToTranslate } from '../../utils/notationToTranslate';
+import { animateMove } from '../../utils/animateMove';
 
 import './styles.css';
-import { animateMove } from '../../utils/animateMove';
 
 const mapToRange = (num: number, squareSize: number): number[] => {
   const adjustedNum = num + squareSize / 2;
@@ -45,10 +46,11 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const draggableConfig = { ...defaultDraggable, ...draggable };
 
   const pieceRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const ghostRef = useRef<HTMLDivElement>(null);
-  const selectRef = useRef<HTMLDivElement>(null);
-  const lastMoveToRef = useRef<HTMLDivElement>(null);
-  const lastMoveFromRef = useRef<HTMLDivElement>(null);
+  const ghostRef = useRef<HTMLDivElement | null>(null);
+  const selectRef = useRef<HTMLDivElement | null>(null);
+  const lastMoveToRef = useRef<HTMLDivElement | null>(null);
+  const lastMoveFromRef = useRef<HTMLDivElement | null>(null);
+  const boardRef = useRef<HTMLDivElement | null>(null);
 
   const [fenPosition, setFenPosition] = useState(fen.split(' ')[0]);
   const [lastFenPosition, setLastFenPosition] = useState(fen.split(' ')[0]);
@@ -76,7 +78,6 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const pieceRefsCurrent = pieceRefs.current;
   const DIGITS = '0123456789';
 
-  const boardRef = useRef(null);
   const ranksRef = useRef(null);
   const filesRef = useRef(null);
 
@@ -205,6 +206,33 @@ const ChessBoard: React.FC<ChessGameProps> = ({
       }
     } else {
       const pieceDiv = pieceRefs.current[index];
+      if (
+        lastAnimation &&
+        index === -1 &&
+        boardRef.current &&
+        lastMoveToRef.current
+      ) {
+        const boardDiv = boardRef.current;
+        const rectBoard = boardDiv.getBoundingClientRect();
+        const x = event.clientX - rectBoard.left;
+        const y = event.clientY - rectBoard.top;
+
+        if (
+          x <= lastAnimation?.endPos[0] + squareSize &&
+          x >= lastAnimation?.endPos[0] &&
+          y <= lastAnimation?.endPos[1] + squareSize &&
+          y >= lastAnimation?.endPos[1]
+        ) {
+          setDraggedIndex(draggedIndex);
+          setLastAnimation(null);
+          lastAnimation.cancel();
+          setLastIndex(draggedIndex);
+          setIsSelect(true);
+          lastMoveToRef.current.classList.add('select');
+          setLastTranslate(coordsToTranslate(lastAnimation?.endPos));
+        }
+      }
+      // select - from = to (piece selected)
       if (pieceDiv) {
         setLastTranslate(pieceDiv.style.transform.toString());
         if (
