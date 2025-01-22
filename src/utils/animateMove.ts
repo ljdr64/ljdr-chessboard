@@ -18,7 +18,7 @@ export const animateMove = (
   onComplete?: () => void,
   onCancel?: () => void
 ) => {
-  if (!pieceDiv) return;
+  if (!pieceDiv) return { startPos, endPos, cancel: () => {} };
 
   let startTime: number;
   let animationFrame: number;
@@ -52,11 +52,13 @@ export const animateMove = (
 
   animationFrame = requestAnimationFrame(animate);
 
-  return () => {
-    cancelAnimationFrame(animationFrame);
-    if (pieceDiv) {
+  return {
+    startPos,
+    endPos,
+    cancel: () => {
+      cancelAnimationFrame(animationFrame);
       pieceDiv.style.transform = `translate(${endPos[0]}px, ${endPos[1]}px)`;
-    }
-    onCancel?.();
+      onCancel?.();
+    },
   };
 };
