@@ -3,6 +3,7 @@ export interface ChessGameProps {
   fen?: string;
   orientation?: string;
   turnColor?: string;
+  check?: string | boolean;
   lastMove?: string[];
   coordinates?: boolean;
   squareSize?: number;
@@ -24,6 +25,7 @@ export const defaultFEN =
   'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 export const defaultOrientation = 'white';
 export const defaultTurnColor = 'white';
+export const defaultCheck = false;
 export const defaultLastMove = ['', ''];
 export const defaultCoordinates = true;
 export const defaultSquareSize = 60;

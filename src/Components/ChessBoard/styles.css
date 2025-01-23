@@ -66,6 +66,23 @@
   background-size: cover;
 }
 
+.ljdr-check {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12.5%;
+  height: 12.5%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 0, 0, 1) 0%,
+    rgba(231, 0, 0, 1) 25%,
+    rgba(169, 0, 0, 0) 89%,
+    rgba(158, 0, 0, 0) 100%
+  );
+  user-select: none;
+  background-size: cover;
+}
+
 .select {
   position: absolute;
   top: 0;

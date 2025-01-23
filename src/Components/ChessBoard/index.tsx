@@ -7,6 +7,7 @@ import {
   defaultDraggable,
   defaultOrientation,
   defaultTurnColor,
+  defaultCheck,
   defaultLastMove,
   defaultCoordinates,
   defaultAnimation,
@@ -15,6 +16,7 @@ import { getPieceClass } from '../../utils/getPieceClass';
 import { getTranslateCoords } from '../../utils/getTranslateCoords';
 import { coordsToTranslate } from '../../utils/coordsToTranslate';
 import { notationToTranslate } from '../../utils/notationToTranslate';
+import { findPieceOnFEN } from '../../utils/findPieceOnFEN';
 import { animateMove } from '../../utils/animateMove';
 
 import './styles.css';
@@ -36,6 +38,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   fen = defaultFEN,
   orientation = defaultOrientation,
   turnColor = defaultTurnColor,
+  check = defaultCheck,
   lastMove = defaultLastMove,
   coordinates = defaultCoordinates,
   squareSize = defaultSquareSize,
@@ -48,6 +51,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const pieceRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const ghostRef = useRef<HTMLDivElement | null>(null);
   const selectRef = useRef<HTMLDivElement | null>(null);
+  const checkRef = useRef<HTMLDivElement | null>(null);
   const lastMoveToRef = useRef<HTMLDivElement | null>(null);
   const lastMoveFromRef = useRef<HTMLDivElement | null>(null);
   const boardRef = useRef<HTMLDivElement | null>(null);
@@ -59,6 +63,18 @@ const ChessBoard: React.FC<ChessGameProps> = ({
     to: notationToTranslate(lastMove, squareSize, orientation)[1],
   });
   const [positionSelect, setPositionSelect] = useState('');
+  const [positionCheck, setPositionCheck] = useState(() => {
+    if (check === 'white' || (check === true && turnColor === 'white')) {
+      return coordsToTranslate(
+        findPieceOnFEN(fen, 'K', orientation, squareSize)
+      );
+    } else if (check === 'black' || (check === true && turnColor === 'black')) {
+      return coordsToTranslate(
+        findPieceOnFEN(fen, 'k', orientation, squareSize)
+      );
+    }
+    return '';
+  });
   const [isSelect, setIsSelect] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isTouchStarted, setIsTouchStarted] = useState(false);
@@ -181,6 +197,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
         }
 
         setPositionSelect('');
+        setPositionCheck('');
         setIsSelect((prev) => !prev);
         setPositionLastMove({
           from: lastTranslate,
@@ -412,6 +429,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
 
             setLastFenPosition((prev) => updateFENForTake(prev, index));
             setPositionSelect('');
+            setPositionCheck('');
             setIsSelect((prev) => !prev);
             setPositionLastMove({
               from: lastTranslate,
@@ -573,6 +591,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                   }
                 }
                 setPositionSelect('');
+                setPositionCheck('');
                 setIsSelect(false);
                 setLastMoveType('drag');
                 setPositionLastMove({
@@ -631,6 +650,15 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           onMouseDown={(event) => handleMouseDown(-1, event)}
           onTouchStart={(event) => handleTouchStart(-1, event)}
         >
+          {positionCheck && (
+            <div
+              className="ljdr-check"
+              ref={checkRef}
+              style={{
+                transform: positionCheck,
+              }}
+            ></div>
+          )}
           {positionSelect && (
             <div
               className="select"

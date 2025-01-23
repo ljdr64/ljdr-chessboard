@@ -9,9 +9,11 @@ const App: React.FC = () => {
       <div className="board-container">
         <ChessBoard
           id={'board-1'}
-          orientation="white"
+          orientation={'black'}
+          turnColor={'white'}
+          check={true}
           lastMove={['e2', 'e3']}
-          coordinates={false}
+          coordinates={true}
           animation={{ enabled: true, duration: 2000 }}
           draggable={{
             distance: 3,
