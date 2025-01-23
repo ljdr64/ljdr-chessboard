@@ -207,11 +207,13 @@ const ChessBoard: React.FC<ChessGameProps> = ({
     } else {
       const pieceDiv = pieceRefs.current[index];
       if (
+        draggedIndex !== null &&
         lastAnimation &&
         index === -1 &&
         boardRef.current &&
         lastMoveToRef.current
       ) {
+        const draggedPiece = pieceRefs.current[draggedIndex];
         const boardDiv = boardRef.current;
         const rectBoard = boardDiv.getBoundingClientRect();
         const x = event.clientX - rectBoard.left;
@@ -223,6 +225,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           y <= lastAnimation?.endPos[1] + squareSize &&
           y >= lastAnimation?.endPos[1]
         ) {
+          setIsDragging(true);
           setDraggedIndex(draggedIndex);
           setLastAnimation(null);
           lastAnimation.cancel();
@@ -230,6 +233,9 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           setIsSelect(true);
           lastMoveToRef.current.classList.add('select');
           setLastTranslate(coordsToTranslate(lastAnimation?.endPos));
+          if (draggableConfig.enabled && draggedPiece) {
+            draggedPiece.classList.add('drag');
+          }
         }
       }
       // select - from = to (piece selected)
