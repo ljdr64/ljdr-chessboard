@@ -12,7 +12,7 @@ const App: React.FC = () => {
           orientation={'black'}
           turnColor={'white'}
           check={true}
-          lastMove={['e2', 'e3']}
+          lastMove={['e2', 'e4']}
           coordinates={true}
           animation={{ enabled: true, duration: 2000 }}
           draggable={{

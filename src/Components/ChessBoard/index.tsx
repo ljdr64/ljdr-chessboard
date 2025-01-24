@@ -99,6 +99,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
 
   let distancePassed = false;
   let isPieceTakenByDrag = false;
+  let isCheck = false;
 
   useEffect(() => {
     if (isDragging) {
@@ -214,9 +215,9 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           }
         }
 
-        if (lastMoveToRef.current) {
-          lastMoveToRef.current.classList.remove('select');
-        }
+        lastMoveToRef.current?.classList.remove('select');
+        lastMoveFromRef.current?.classList.remove('select');
+        checkRef.current?.classList.remove('select');
         if (draggableConfig.autoDistance) {
           setLastMoveType('select');
         }
@@ -265,6 +266,11 @@ const ChessBoard: React.FC<ChessGameProps> = ({
         ) {
           setIsDragging(true);
           setLastIndex(draggedIndex);
+          if (pieceDiv.style.transform === checkRef.current?.style.transform) {
+            isCheck = true;
+            checkRef.current.classList.add('select');
+          }
+
           if (
             lastAnimation &&
             lastMoveToRef.current &&
@@ -304,11 +310,15 @@ const ChessBoard: React.FC<ChessGameProps> = ({
 
               setIsSelect((prev) => !prev);
               if (
-                lastMoveToRef.current &&
+                positionLastMove.from ===
+                `translate(${newX[1]}px, ${newY[1]}px)`
+              ) {
+                lastMoveFromRef.current?.classList.add('select');
+              } else if (
                 positionLastMove.to === `translate(${newX[1]}px, ${newY[1]}px)`
               ) {
-                lastMoveToRef.current.classList.add('select');
-              } else {
+                lastMoveToRef.current?.classList.add('select');
+              } else if (!isCheck) {
                 setPositionSelect(`translate(${newX[1]}px, ${newY[1]}px)`);
               }
 
@@ -435,9 +445,9 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               from: lastTranslate,
               to: pieceDiv.style.transform,
             });
-            if (lastMoveToRef.current) {
-              lastMoveToRef.current.classList.remove('select');
-            }
+            lastMoveToRef.current?.classList.remove('select');
+            lastMoveFromRef.current?.classList.remove('select');
+            checkRef.current?.classList.remove('select');
 
             if (draggableConfig.autoDistance) {
               setLastMoveType('select');
@@ -519,9 +529,9 @@ const ChessBoard: React.FC<ChessGameProps> = ({
               setDraggedIndex(null);
               setPositionSelect('');
               setIsSelect(false);
-              if (lastMoveToRef.current) {
-                lastMoveToRef.current.classList.remove('select');
-              }
+              lastMoveToRef.current?.classList.remove('select');
+              lastMoveFromRef.current?.classList.remove('select');
+              checkRef.current?.classList.remove('select');
             } else {
               Object.keys(pieceRefsCurrent).forEach((key) => {
                 const pieceRef = pieceRefsCurrent[key];
@@ -584,6 +594,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                     pieceDiv.style.transform === positionLastMove.to &&
                     lastIndex !== null
                   ) {
+                    pieceDiv.style.transform = `translate(${newX[1]}px, ${newY[1]}px)`;
                     setFenPosition(updateFENForTake(fenPosition, lastIndex));
                     setLastFenPosition(
                       updateFENForTake(fenPosition, lastIndex)
@@ -598,15 +609,15 @@ const ChessBoard: React.FC<ChessGameProps> = ({
                   from: lastTranslate,
                   to: pieceDiv.style.transform,
                 });
-                if (lastMoveToRef.current) {
-                  lastMoveToRef.current.classList.remove('select');
-                }
+                lastMoveToRef.current?.classList.remove('select');
+                lastMoveFromRef.current?.classList.remove('select');
+                checkRef.current?.classList.remove('select');
               }
 
               if (!isSelect) {
-                if (lastMoveToRef.current) {
-                  lastMoveToRef.current.classList.remove('select');
-                }
+                lastMoveToRef.current?.classList.remove('select');
+                lastMoveFromRef.current?.classList.remove('select');
+                checkRef.current?.classList.remove('select');
                 setPositionSelect('');
               }
 
@@ -652,7 +663,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
         >
           {positionCheck && (
             <div
-              className="ljdr-check"
+              className="ljdr-square ljdr-check"
               ref={checkRef}
               style={{
                 transform: positionCheck,
@@ -661,7 +672,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           )}
           {positionSelect && (
             <div
-              className="select"
+              className="ljdr-square select"
               ref={selectRef}
               style={{
                 transform: positionSelect,
@@ -671,14 +682,14 @@ const ChessBoard: React.FC<ChessGameProps> = ({
           {positionLastMove.from && positionLastMove.to && (
             <>
               <div
-                className="ljdr-last-move"
+                className="ljdr-square ljdr-last-move"
                 ref={lastMoveToRef}
                 style={{
                   transform: positionLastMove.to,
                 }}
               ></div>
               <div
-                className="ljdr-last-move"
+                className="ljdr-square ljdr-last-move"
                 ref={lastMoveFromRef}
                 style={{
                   transform: positionLastMove.from,

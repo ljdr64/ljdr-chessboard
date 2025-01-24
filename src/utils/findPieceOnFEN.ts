@@ -18,7 +18,6 @@ export const findPieceOnFEN = (
   let row = 0;
   let col = 0;
   const DIGITS = '0123456789';
-  console.log(fen);
 
   for (let i = 0; i < fen.length; i++) {
     const char = fen[i];

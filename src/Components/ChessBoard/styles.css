@@ -31,47 +31,36 @@
   cursor: pointer;
 }
 
-.ljdr-piece {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 12.5%;
-  height: 12.5%;
-  background-size: cover;
-  will-change: transform;
-  user-select: none;
-  z-index: 5;
-}
-
+.ljdr-piece,
+.ljdr-square,
 .ljdr-ghost {
   position: absolute;
   top: 0;
   left: 0;
   width: 12.5%;
   height: 12.5%;
-  background-size: cover;
   user-select: none;
+  background-size: cover;
+}
+
+.ljdr-piece {
+  will-change: transform;
+  z-index: 5;
+}
+
+.ljdr-ghost {
   opacity: 0.3;
-  position: absolute;
 }
 
 .ljdr-last-move {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 12.5%;
-  height: 12.5%;
   background: rgba(155, 199, 0, 0.41);
-  user-select: none;
-  background-size: cover;
+}
+
+.select {
+  background: rgba(20, 85, 30, 0.5);
 }
 
 .ljdr-check {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 12.5%;
-  height: 12.5%;
   background: radial-gradient(
     ellipse at center,
     rgba(255, 0, 0, 1) 0%,
@@ -79,19 +68,6 @@
     rgba(169, 0, 0, 0) 89%,
     rgba(158, 0, 0, 0) 100%
   );
-  user-select: none;
-  background-size: cover;
-}
-
-.select {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 12.5%;
-  height: 12.5%;
-  background: rgba(20, 85, 30, 0.5);
-  user-select: none;
-  background-size: cover;
 }
 
 .animate {
