@@ -1,16 +1,18 @@
 /**
  * Handles the movement animation of a chess piece and allows for abrupt termination.
  *
- * @param pieceDiv - The reference to the piece element being moved.
- * @param startPos - The starting position of the piece as an array [x, y].
- * @param endPos - The target position of the piece as an array [x, y].
+ * @param index - The unique index or identifier of the piece being animated.
+ * @param pieceDiv - A reference to the HTML element representing the chess piece.
+ * @param startPos - The starting position of the piece as an array [x, y], in pixels.
+ * @param endPos - The target position of the piece as an array [x, y], in pixels.
  * @param duration - The duration of the animation in milliseconds.
- * @param onComplete - A callback function to be called when the animation completes successfully.
- * @param onCancel - A callback function to be called when the animation is canceled abruptly.
+ * @param onComplete - (Optional) A callback function executed when the animation completes successfully.
+ * @param onCancel - (Optional) A callback function executed when the animation is canceled abruptly.
  *
- * @returns A function that can be called to abruptly finish the animation and set the piece to its final position.
+ * @returns An object with the `index`, `startPos`, `endPos`, and a `cancel` function to abruptly stop the animation and set the piece to its final position.
  */
 export const animateMove = (
+  index: number,
   pieceDiv: HTMLDivElement | null,
   startPos: [number, number],
   endPos: [number, number],
@@ -18,7 +20,7 @@ export const animateMove = (
   onComplete?: () => void,
   onCancel?: () => void
 ) => {
-  if (!pieceDiv) return { startPos, endPos, cancel: () => {} };
+  if (!pieceDiv) return { index, startPos, endPos, cancel: () => {} };
 
   let startTime: number;
   let animationFrame: number;
@@ -53,6 +55,7 @@ export const animateMove = (
   animationFrame = requestAnimationFrame(animate);
 
   return {
+    index,
     startPos,
     endPos,
     cancel: () => {
