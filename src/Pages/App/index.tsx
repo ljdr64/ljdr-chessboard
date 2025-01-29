@@ -9,7 +9,7 @@ const App: React.FC = () => {
       <div className="board-container">
         <ChessBoard
           id={'board-1'}
-          orientation={'black'}
+          orientation={'white'}
           turnColor={'white'}
           check={true}
           lastMove={['e2', 'e4']}
@@ -20,6 +20,7 @@ const App: React.FC = () => {
             showGhost: true,
             deleteOnDropOff: true,
           }}
+          events={{ moves: ['d2d4'] }}
         />
       </div>
       <div className="board-container">

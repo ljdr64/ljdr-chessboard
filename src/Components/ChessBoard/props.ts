@@ -4,7 +4,7 @@ export interface ChessGameProps {
   orientation?: string;
   turnColor?: string;
   check?: string | boolean;
-  lastMove?: string[];
+  lastMove?: [string, string];
   coordinates?: boolean;
   squareSize?: number;
   animation?: {
@@ -17,6 +17,9 @@ export interface ChessGameProps {
     autoDistance?: boolean;
     showGhost?: boolean;
     deleteOnDropOff?: boolean;
+  };
+  events?: {
+    moves?: string[];
   };
 }
 
@@ -40,3 +43,4 @@ export const defaultDraggable = {
   showGhost: true,
   deleteOnDropOff: false,
 };
+export const defaultEvents = { moves: [] };
