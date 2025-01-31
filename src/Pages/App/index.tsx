@@ -21,7 +21,18 @@ const App: React.FC = () => {
             deleteOnDropOff: true,
           }}
           events={{
-            moves: ['d2d4', 'd7d5', 'c2c4', 'e7e6', 'g1f3', 'd5c4', 'e2e4'],
+            moves: [
+              'd2safasfd4',
+              'c2c4',
+              'd7d5',
+              'casd2csda4',
+              'g1f3',
+              'g8f6',
+              'esdf7e6',
+              'g1sfdsf3',
+              'd5sdfsdc4',
+              'd2d4',
+            ],
           }}
         />
       </div>

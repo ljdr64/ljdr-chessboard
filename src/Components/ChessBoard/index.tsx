@@ -15,7 +15,6 @@ import {
 } from './props';
 import { getPieceClass } from '../../utils/getPieceClass';
 import { getTranslateCoords } from '../../utils/getTranslateCoords';
-import { translateToNotation } from '../../utils/translateToNotation';
 import { coordsToTranslate } from '../../utils/coordsToTranslate';
 import { notationToTranslate } from '../../utils/notationToTranslate';
 import { notationToCoords } from '../../utils/notationToCoords';
@@ -25,6 +24,7 @@ import { fenToBoardMap } from '../../utils/fenToBoardMap';
 import { fenToBoardIndex } from '../../utils/fenToBoardIndex';
 import { boardMapToFEN } from '../../utils/boardMapToFEN';
 import { animateMove } from '../../utils/animateMove';
+import { validateMoves } from '../../utils/validateMoves';
 
 import './styles.css';
 
@@ -74,10 +74,11 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const [boardIndex, setBoardIndex] = useState(() => {
     const newBoardIndex: Record<string, number> = fenToBoardIndex(fen);
     if (eventsConfig.moves) {
-      if (eventsConfig.moves.length >= 1) {
-        for (let i = 0; i < eventsConfig.moves.length - 1; i++) {
-          const from = eventsConfig.moves[i].slice(0, 2);
-          const to = eventsConfig.moves[i].slice(2, 4);
+      const validMoves = validateMoves(eventsConfig.moves);
+      if (validMoves.length > 1) {
+        for (let i = 0; i < validMoves.length - 1; i++) {
+          const from = validMoves[i].slice(0, 2);
+          const to = validMoves[i].slice(2, 4);
 
           newBoardIndex[to] = newBoardIndex[from];
           delete newBoardIndex[from];
@@ -90,10 +91,11 @@ const ChessBoard: React.FC<ChessGameProps> = ({
     const newBoardMap: Record<string, { role: string; color: string }> =
       fenToBoardMap(fen);
     if (eventsConfig.moves) {
-      if (eventsConfig.moves.length >= 1) {
-        for (let i = 0; i < eventsConfig.moves.length - 1; i++) {
-          const from = eventsConfig.moves[i].slice(0, 2);
-          const to = eventsConfig.moves[i].slice(2, 4);
+      const validMoves = validateMoves(eventsConfig.moves);
+      if (validMoves.length >= 2) {
+        for (let i = 0; i < validMoves.length - 1; i++) {
+          const from = validMoves[i].slice(0, 2);
+          const to = validMoves[i].slice(2, 4);
 
           newBoardMap[to] = newBoardMap[from];
           delete newBoardMap[from];
@@ -105,12 +107,13 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const [fenPosition, setFenPosition] = useState(() => {
     let fenPieces = fen.split(' ')[0];
     if (eventsConfig.moves) {
-      if (eventsConfig.moves.length >= 1) {
+      const validMoves = validateMoves(eventsConfig.moves);
+      if (validMoves.length >= 2) {
         const newBoardMap: Record<string, { role: string; color: string }> =
           fenToBoardMap(fen);
-        for (let i = 0; i < eventsConfig.moves.length - 1; i++) {
-          const from = eventsConfig.moves[i].slice(0, 2);
-          const to = eventsConfig.moves[i].slice(2, 4);
+        for (let i = 0; i < validMoves.length - 1; i++) {
+          const from = validMoves[i].slice(0, 2);
+          const to = validMoves[i].slice(2, 4);
 
           newBoardMap[to] = newBoardMap[from];
           delete newBoardMap[from];
@@ -123,12 +126,13 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const [lastFenPosition, setLastFenPosition] = useState(() => {
     let fenPieces = fen.split(' ')[0];
     if (eventsConfig.moves) {
-      if (eventsConfig.moves.length >= 1) {
+      const validMoves = validateMoves(eventsConfig.moves);
+      if (validMoves.length >= 2) {
         const newBoardMap: Record<string, { role: string; color: string }> =
           fenToBoardMap(fen);
-        for (let i = 0; i < eventsConfig.moves.length - 1; i++) {
-          const from = eventsConfig.moves[i].slice(0, 2);
-          const to = eventsConfig.moves[i].slice(2, 4);
+        for (let i = 0; i < validMoves.length - 1; i++) {
+          const from = validMoves[i].slice(0, 2);
+          const to = validMoves[i].slice(2, 4);
 
           newBoardMap[to] = newBoardMap[from];
           delete newBoardMap[from];
@@ -140,8 +144,9 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   });
   const [positionLastMove, setPositionLastMove] = useState(() => {
     if (eventsConfig.moves) {
-      if (eventsConfig.moves.length >= 1) {
-        const eventsLastMove = eventsConfig.moves.slice(-1)[0];
+      const validMoves = validateMoves(eventsConfig.moves);
+      if (validMoves.length >= 1) {
+        const eventsLastMove = validMoves.slice(-1)[0];
         const from = eventsLastMove.slice(0, 2);
         const to = eventsLastMove.slice(-2);
         const [eventsFrom, eventsTo] = notationToTranslate(
@@ -162,7 +167,8 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const [positionSelect, setPositionSelect] = useState('');
   const [positionCheck, setPositionCheck] = useState(() => {
     if (eventsConfig.moves) {
-      if (eventsConfig.moves.length >= 1) {
+      const validMoves = validateMoves(eventsConfig.moves);
+      if (validMoves.length >= 1) {
         return '';
       }
     }
