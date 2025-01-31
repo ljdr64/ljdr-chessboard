@@ -15,6 +15,7 @@ import {
 } from './props';
 import { getPieceClass } from '../../utils/getPieceClass';
 import { getTranslateCoords } from '../../utils/getTranslateCoords';
+import { translateToNotation } from '../../utils/translateToNotation';
 import { coordsToTranslate } from '../../utils/coordsToTranslate';
 import { notationToTranslate } from '../../utils/notationToTranslate';
 import { notationToCoords } from '../../utils/notationToCoords';
@@ -54,6 +55,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   const eventsConfig = { ...defaultEvents, ...events };
 
   const pieceRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const boardIndexRefs = useRef<Record<string, number>>({});
   const ghostRef = useRef<HTMLDivElement | null>(null);
   const selectRef = useRef<HTMLDivElement | null>(null);
   const checkRef = useRef<HTMLDivElement | null>(null);
@@ -67,6 +69,8 @@ const ChessBoard: React.FC<ChessGameProps> = ({
   } | null>(null);
   const boardRef = useRef<HTMLDivElement | null>(null);
 
+  const [boardIndex, setBoardIndex] = useState({});
+  const [boardMap, setBoardMap] = useState({});
   const [fenPosition, setFenPosition] = useState(fen.split(' ')[0]);
   const [lastFenPosition, setLastFenPosition] = useState(fen.split(' ')[0]);
   const [positionLastMove, setPositionLastMove] = useState(() => {
@@ -156,6 +160,54 @@ const ChessBoard: React.FC<ChessGameProps> = ({
     };
   }, [isDragging]);
 
+  // events: moves.{allMoves except lastMove}
+  useEffect(() => {
+    const newBoardMap: Record<string, { role: string; color: string }> = {};
+    const newBoardIndex: Record<string, number> = {};
+
+    Object.entries(pieceRefsCurrent).forEach(([index, ref]) => {
+      if (ref) {
+        const transform = ref.style.transform;
+        const role = ref.className.split(' ').slice(-1)[0];
+        const color = ref.className.split(' ').slice(-2)[0];
+        const squareFromTranslate = translateToNotation(
+          transform,
+          squareSize,
+          orientation
+        );
+        newBoardMap[squareFromTranslate] = { role: role, color: color };
+        newBoardIndex[squareFromTranslate] = parseInt(index, 10);
+      }
+    });
+
+    for (let i = 0; i < eventsConfig.moves.length - 1; i++) {
+      const from = eventsConfig.moves[i].slice(0, 2);
+      const to = eventsConfig.moves[i].slice(2, 4);
+
+      const pieceFromRef = pieceRefsCurrent[newBoardIndex[from]];
+      if (pieceFromRef) {
+        const [x, y] = notationToCoords(to, squareSize, orientation);
+        pieceFromRef.style.transform = `translate(${x}px, ${y}px)`;
+        if (newBoardIndex[to]) {
+          setFenPosition(updateFENForTake(fenPosition, newBoardIndex[to]));
+          setLastFenPosition(updateFENForTake(fenPosition, newBoardIndex[to]));
+        }
+      }
+      newBoardIndex[to] = newBoardIndex[from];
+      delete newBoardIndex[from];
+
+      newBoardMap[to] = newBoardMap[from];
+      delete newBoardMap[from];
+    }
+
+    boardIndexRefs.current = newBoardIndex;
+    setBoardIndex(newBoardIndex);
+    setBoardMap(newBoardMap);
+
+    return () => {};
+  }, []);
+
+  // events: moves.{lastMove}
   useEffect(() => {
     const eventsLastMove = eventsConfig.moves?.slice(-1)[0];
     const from = eventsLastMove?.slice(0, 2);
@@ -205,6 +257,7 @@ const ChessBoard: React.FC<ChessGameProps> = ({
             }
           }, 0);
           lastAnimationRef.current = null;
+          setLastAnimation(null);
         },
         () => {
           setTimeout(() => {
