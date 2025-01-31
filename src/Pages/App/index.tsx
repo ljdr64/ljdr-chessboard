@@ -20,7 +20,9 @@ const App: React.FC = () => {
             showGhost: true,
             deleteOnDropOff: true,
           }}
-          events={{ moves: ['d2d4', 'd4d8', 'e2e4'] }}
+          events={{
+            moves: ['d2d4', 'd7d5', 'c2c4', 'e7e6', 'g1f3', 'd5c4', 'e2e4'],
+          }}
         />
       </div>
       <div className="board-container">
